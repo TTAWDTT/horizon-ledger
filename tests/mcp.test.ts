@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
-import { createDecision, initLedger, initWorkspace, readLedger } from '../src/core';
+import { createDecision, createGateReport, initLedger, initWorkspace, readLedger, verifyGateReport } from '../src/core';
 import { createMcpServer } from '../src/mcp';
 
 function parseResult(result: any): any {
@@ -33,6 +33,45 @@ describe('MCP server', () => {
     await readonly.close();
   });
 
+  it('verifies hash-bound gate reports', async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'horizon-mcp-report-'));
+    const server = createMcpServer(root);
+    const client = await connect(server);
+    try {
+      await initLedger(root);
+      const gate = {
+        version: 1,
+        root,
+        files: ['src/core/storage.ts'],
+        decisions: [],
+        coverage: { governed: 1, unguarded: 0 },
+        conflicts: [],
+        audit: { verified: 0, missing: 0, external: 0, unverifiable: 0, sealed: 0, findings: [] },
+        diagnostics: [],
+        violations: [],
+        verdict: 'pass',
+      };
+      const report = createGateReport({ root, base: 'main', head: 'HEAD', gate });
+      const raw = JSON.stringify(report);
+      const verified = parseResult(await client.callTool({
+        name: 'horizon_verify_gate_report',
+        arguments: { report: raw },
+      }));
+      expect(verified.ok).toBe(true);
+      expect(verified.reportId).toBe(report.reportId);
+      expect(verified.verdict).toBe('pass');
+      expect(verifyGateReport(raw).ok).toBe(true);
+
+      const mismatch = await client.callTool({
+        name: 'horizon_verify_gate_report',
+        arguments: { report: raw, expectVerdict: 'block' },
+      });
+      expect(mismatch.isError).toBe(true);
+    } finally {
+      await client.close();
+      await fs.rm(root, { recursive: true, force: true });
+    }
+  });
   it('exposes workspace tools as read-only context', async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), 'horizon-mcp-workspace-'));
     const server = createMcpServer(root);

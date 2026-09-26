@@ -29,6 +29,7 @@ import {
   addLink,
   addAlternative,
   addEvidence,
+  verifyGateReport,
   type Decision,
   type DecisionPolicy,
 } from '../core';
@@ -94,7 +95,7 @@ export interface McpServerOptions {
 export function createMcpServer(rootArg?: string, options: McpServerOptions = {}): McpServer {
   const root = path.resolve(rootArg ?? process.env.HORIZON_ROOT ?? '.');
   const allowWrite = options.write ?? process.env.HORIZON_MCP_WRITE === '1';
-  const server = new McpServer({ name: 'horizon-ledger', version: '0.17.0' });
+  const server = new McpServer({ name: 'horizon-ledger', version: '0.19.0' });
 
   server.registerTool('horizon_list', {
     description: 'List all decisions in the current Horizon Ledger',
@@ -241,7 +242,9 @@ export function createMcpServer(rootArg?: string, options: McpServerOptions = {}
         isError: true,
       };
     }
-  });  server.registerTool('horizon_gate', {
+  });
+
+  server.registerTool('horizon_gate', {
     description: 'Check changed files against policy-governed decisions',
     inputSchema: {
       base: z.string().optional().describe('Base ref or sha; defaults to HEAD~1'),
@@ -252,6 +255,34 @@ export function createMcpServer(rootArg?: string, options: McpServerOptions = {}
   }, async ({ base, head, files }: { base?: string; head?: string; files?: string[] }) => {
     try {
       return jsonResult(await buildPullRequestGate(root, base ?? 'HEAD~1', head ?? 'HEAD', files));
+    } catch (error) {
+      return {
+        content: [{ type: 'text' as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      };
+    }
+  });
+  server.registerTool('horizon_verify_gate_report', {
+    description: 'Verify a hash-bound Horizon policy gate report',
+    inputSchema: {
+      report: z.string().min(1).describe('Raw Horizon policy gate report JSON'),
+      expectReportId: z.string().optional().describe('Optional report id that must match'),
+      expectGateDigest: z.string().optional().describe('Optional gate digest that must match'),
+      expectVerdict: z.enum(['pass', 'warn', 'block']).optional().describe('Required gate verdict'),
+    },
+    annotations: { readOnlyHint: true },
+  }, async ({ report, expectReportId, expectGateDigest, expectVerdict }: {
+    report: string;
+    expectReportId?: string;
+    expectGateDigest?: string;
+    expectVerdict?: 'pass' | 'warn' | 'block';
+  }) => {
+    try {
+      return jsonResult(verifyGateReport(report, {
+        reportId: expectReportId,
+        gateDigest: expectGateDigest,
+        verdict: expectVerdict,
+      }));
     } catch (error) {
       return {
         content: [{ type: 'text' as const, text: error instanceof Error ? error.message : String(error) }],

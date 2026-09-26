@@ -59,6 +59,8 @@ horizon workspace gate --base main --head HEAD
 
 The read-only `horizon_workspace_gate` MCP tool uses the same deterministic evaluation.
 
+Agents can verify an existing report with the read-only `horizon_verify_gate_report` tool. It accepts raw report JSON and optional `expectReportId`, `expectGateDigest`, and `expectVerdict` guards.
+
 ## CI
 
 For a single root, add a reusable gate step:

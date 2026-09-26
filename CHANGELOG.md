@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.19.0
+
+- Added read-only `horizon_verify_gate_report` MCP tool.
+- Added optional report-id, gate-digest, and verdict expectations.
+
 ## 0.18.0
 
 - Added hash-bound JSON policy gate reports with canonical SHA-256 report IDs.

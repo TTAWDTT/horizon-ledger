@@ -128,3 +128,54 @@ export function parseGateReport(raw: string): GateReport {
 }
 
 
+
+export type GateReportVerdict = 'pass' | 'warn' | 'block';
+
+export interface GateReportExpectations {
+  reportId?: string;
+  gateDigest?: string;
+  verdict?: GateReportVerdict;
+}
+
+export interface GateReportVerification {
+  ok: true;
+  reportId: string;
+  gateDigest: string;
+  verdict: GateReportVerdict;
+  producer: GateReport['producer'];
+  context: GateReport['context'];
+  files: unknown;
+  coverage: unknown;
+  violations: unknown;
+}
+
+export function verifyGateReport(
+  raw: string,
+  expectations: GateReportExpectations = {},
+): GateReportVerification {
+  const report = parseGateReport(raw);
+  const gate = report.gate as { verdict?: unknown; files?: unknown; coverage?: unknown; violations?: unknown };
+  if (gate.verdict !== 'pass' && gate.verdict !== 'warn' && gate.verdict !== 'block') {
+    throw new Error('Invalid Horizon gate report: missing gate verdict');
+  }
+  if (expectations.reportId && expectations.reportId !== report.reportId) {
+    throw new Error(`Horizon gate report id mismatch: expected ${expectations.reportId}, got ${report.reportId}`);
+  }
+  if (expectations.gateDigest && expectations.gateDigest !== report.gateDigest) {
+    throw new Error(`Horizon gate digest mismatch: expected ${expectations.gateDigest}, got ${report.gateDigest}`);
+  }
+  if (expectations.verdict && expectations.verdict !== gate.verdict) {
+    throw new Error(`Horizon gate verdict mismatch: expected ${expectations.verdict}, got ${gate.verdict}`);
+  }
+  return {
+    ok: true,
+    reportId: report.reportId,
+    gateDigest: report.gateDigest,
+    verdict: gate.verdict,
+    producer: report.producer,
+    context: report.context,
+    files: gate.files,
+    coverage: gate.coverage,
+    violations: gate.violations,
+  };
+}
