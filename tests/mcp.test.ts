@@ -74,6 +74,10 @@ describe('MCP server', () => {
       const audit = parseResult(await client.callTool({ name: 'horizon_workspace_audit', arguments: {} }));
       expect(audit.verified).toBe(1);
 
+      const pack = parseResult(await client.callTool({ name: 'horizon_workspace_pack_export', arguments: {} }));
+      expect(pack.packId).toMatch(/^sha256:[a-f0-9]{64}$/u);
+      expect(pack.decisions).toHaveLength(1);
+
       const validation = parseResult(await client.callTool({ name: 'horizon_workspace_validate', arguments: {} }));
       expect(validation.decisions).toBe(1);
       expect(validation.ok).toBe(true);

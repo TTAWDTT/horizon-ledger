@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.12.0
+
+- Added deterministic, hash-bound Horizon workspace packs.
+- Added `horizon workspace pack export`, `horizon workspace pack inspect`, and the read-only `horizon_workspace_pack_export` MCP tool.
+
 ## 0.11.0
 
 - Added strict workspace config validation for duplicate IDs, duplicate names, duplicate resolved paths, unsafe metadata paths, and invalid enabled values.

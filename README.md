@@ -76,10 +76,11 @@ horizon workspace validate
 horizon workspace audit
 horizon workspace pr-context --base main --head HEAD
 horizon workspace export --format markdown --out WORKSPACE.md
+horizon workspace pack export --out WORKSPACE-PACK.json
 horizon workspace context storage
 ```
 
-The MCP server also exposes read-only `horizon_workspace_list`, `horizon_workspace_audit`, `horizon_workspace_context`, and `horizon_workspace_validate` tools, so coding agents can query cross-root decisions without a cloud service. Workspace configs are validated strictly: duplicate IDs, names, and aliases fail fast instead of silently degrading into a partial graph.
+The MCP server also exposes read-only `horizon_workspace_list`, `horizon_workspace_audit`, `horizon_workspace_context`, and `horizon_workspace_validate` tools, so coding agents can query cross-root decisions without a cloud service. Workspace packs are deterministic and SHA-256-bound, so you can review, archive, or hand off decisions without a cloud service. Workspace configs are validated strictly: duplicate IDs, names, and aliases fail fast instead of silently degrading into a partial graph.
 
 To run a local decision dashboard:
 
@@ -108,7 +109,7 @@ Read-only is the default. To allow decision capture, use `horizon mcp --write`.
 
 - local-first, Git-friendly Markdown decisions
 - structured alternatives, evidence, and provenance
-- graph, search, scoring, and cross-repository workspaces
+- graph, search, scoring, cross-repository workspaces, and portable packs
 - a local-only human dashboard with no telemetry
 - useful for humans, coding agents, and future CI gates
 - no vendor lock-in, no hosted database, no LLM required
@@ -129,7 +130,7 @@ Read-only is the default. To allow decision capture, use `horizon mcp --write`.
 - cross-repository workspace aggregation (shipped)
 - ADR import (shipped)
 - decision context bundles and PR context (shipped)
-- team sync and collaborative workspace packs
+- portable workspace packs (export/inspect shipped), then strict import and sync
 
 ## Why open source
 

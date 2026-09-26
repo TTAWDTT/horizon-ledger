@@ -30,6 +30,10 @@ import {
   buildWorkspacePullRequestContext,
   getWorkspaceDecision,
   exportWorkspace,
+  exportWorkspacePack,
+  inspectWorkspacePack,
+  parseWorkspacePack,
+  workspacePackMarkdown,
   initWorkspace,
   readWorkspace,
   readWorkspaceLedger,
@@ -48,7 +52,7 @@ const program = new Command();
 program
   .name('horizon')
   .description('Local-first decision ledger for humans and AI agents.')
-  .version('0.11.0');
+  .version('0.12.0');
 
 program
   .command('init')
@@ -682,6 +686,52 @@ workspace
       process.exitCode = 1;
     }
   });
+const workspacePack = workspace
+  .command('pack')
+  .description('Export and inspect deterministic workspace decision packs');
+
+workspacePack
+  .command('export')
+  .description('Export a deterministic, hash-bound workspace decision pack')
+  .option('-f, --format <format>', 'json | markdown', 'json')
+  .option('-o, --out <path>', 'write to a file instead of stdout')
+  .option('-r, --root <path>', 'workspace root', '.')
+  .action(async (options: { format?: string; out?: string; root?: string }) => {
+    const root = path.resolve(options.root ?? '.');
+    try {
+      const pack = await exportWorkspacePack(root);
+      const payload = options.format === 'markdown' ? workspacePackMarkdown(pack) : JSON.stringify(pack, null, 2);
+      const outPath = options.out;
+      if (outPath) {
+        await import('node:fs/promises').then((fs) => fs.writeFile(outPath, payload, 'utf8'));
+        console.log('Wrote ' + outPath);
+      } else {
+        console.log(payload);
+      }
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  });
+
+workspacePack
+  .command('inspect <file>')
+  .description('Validate a workspace pack without writing any files')
+  .option('-f, --format <format>', 'json | markdown', 'json')
+  .option('-r, --root <path>', 'workspace root', '.')
+  .action(async (file: string, options: { format?: string; root?: string }) => {
+    try {
+      const raw = await import('node:fs/promises').then((fs) => fs.readFile(file, 'utf8'));
+      const payload = options.format === 'markdown'
+        ? workspacePackMarkdown(parseWorkspacePack(raw))
+        : JSON.stringify(inspectWorkspacePack(raw), null, 2);
+      console.log(payload);
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  });
+
 program
   .command('web')
   .description('Start a local web viewer for the ledger')

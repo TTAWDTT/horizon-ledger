@@ -14,6 +14,7 @@ Horizon Ledger is open source, local-first, and boring by default. The goal is n
 - conflict detection
 - ADR importer
 - export formats
+- deterministic workspace packs
 
 ## Possible paid extensions
 
