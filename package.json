@@ -1,0 +1,38 @@
+{
+  "name": "horizon-ledger",
+  "version": "0.1.0",
+  "description": "A local-first decision ledger for humans and AI agents. Capture why decisions were made, prove them with evidence, and query the graph from code, docs, and agents.",
+  "main": "dist/core/index.js",
+  "types": "dist/core/index.d.ts",
+  "bin": {
+    "horizon": "./dist/cli/index.js"
+  },
+  "scripts": {
+    "dev": "bun run src/cli/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "bun run build && bun run test"
+  },
+  "keywords": [
+    "decision-records",
+    "adr",
+    "ai-agents",
+    "local-first",
+    "developer-tools",
+    "provenance"
+  ],
+  "author": "Codex",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "commander": "^15.0.0",
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "typescript": "^7.0.2"
+  }
+}
