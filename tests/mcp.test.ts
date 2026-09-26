@@ -126,6 +126,33 @@ describe('MCP server', () => {
 
       const resources = await client.listResources();
       expect(resources.resources.map((resource: any) => resource.uri)).toContain('horizon://decisions');
+      const prompts = await client.listPrompts();
+      const promptNames = prompts.prompts.map((prompt: any) => prompt.name);
+      expect(promptNames).toContain('horizon_change_review');
+      expect(promptNames).toContain('horizon_decision_capture');
+      expect(promptNames).toContain('horizon_release_audit');
+
+      const reviewPrompt = await client.getPrompt({
+        name: 'horizon_change_review',
+        arguments: { files: 'src/core/index.ts', base: 'main', head: 'HEAD', workspace: 'true' },
+      });
+      const reviewText = reviewPrompt.messages[0]?.content as any;
+      expect(reviewText.type).toBe('text');
+      expect(reviewText.text).toContain('src/core/index.ts');
+      expect(reviewText.text).toContain('horizon_workspace_gate');
+
+      const capturePrompt = await client.getPrompt({
+        name: 'horizon_decision_capture',
+        arguments: { title: 'Use SQLite', summary: 'SQLite keeps data local.', scope: 'src/core', policy: 'block/verified' },
+      });
+      expect(capturePrompt.messages[0]?.content?.text).toContain('horizon_create');
+
+      const auditPrompt = await client.getPrompt({
+        name: 'horizon_release_audit',
+        arguments: { base: 'v0.20.0', head: 'v0.21.0', workspace: 'true' },
+      });
+      expect(auditPrompt.messages[0]?.content?.text).toContain('Audit the release range with Horizon');
+
 
       const decisionResource = await client.readResource({
         uri: 'horizon://decisions/D-0001',

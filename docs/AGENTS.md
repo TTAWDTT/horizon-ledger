@@ -71,3 +71,11 @@ MCP hosts can also browse Horizon context as read-only resources:
 - `horizon://decisions` — JSON list of decisions
 - `horizon://decisions/{id}` — one decision with evidence and policy
 - `horizon://workspace/pack` — deterministic, hash-bound workspace pack
+
+## Prompts
+
+MCP hosts can invoke the same governed workflow as user-selected prompts:
+
+- `horizon_change_review` — inspect decisions and run the policy gate before a change
+- `horizon_decision_capture` — capture a durable decision with alternatives, evidence, and policy
+- `horizon_release_audit` — audit a release range with gate and evidence tools

@@ -140,7 +140,7 @@ Read-only is the default. To allow decision capture, use `horizon mcp --write`.
 ## Roadmap
 
 - CLI and Markdown ledger (shipped)
-- MCP server for coding agents (started)
+- MCP server with tools, resources, and governed prompts (shipped)
 - local web dashboard (shipped)
 - GitHub Action validation (shipped)
 - cross-repository workspace aggregation (shipped)

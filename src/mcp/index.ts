@@ -97,7 +97,7 @@ export interface McpServerOptions {
 export function createMcpServer(rootArg?: string, options: McpServerOptions = {}): McpServer {
   const root = path.resolve(rootArg ?? process.env.HORIZON_ROOT ?? '.');
   const allowWrite = options.write ?? process.env.HORIZON_MCP_WRITE === '1';
-  const server = new McpServer({ name: 'horizon-ledger', version: '0.24.0' });
+  const server = new McpServer({ name: 'horizon-ledger', version: '0.25.0' });
 
   server.registerTool('horizon_list', {
     description: 'List all decisions in the current Horizon Ledger',
@@ -283,6 +283,110 @@ export function createMcpServer(rootArg?: string, options: McpServerOptions = {}
     }
   });
 
+
+
+  server.registerPrompt('horizon_change_review', {
+    title: 'Governed change review',
+    description: 'Review a change against Horizon decisions, evidence, and policy gates',
+    argsSchema: {
+      files: z.string().min(1).describe('Comma-separated changed paths'),
+      base: z.string().optional().describe('Base ref or SHA'),
+      head: z.string().optional().describe('Head ref or SHA'),
+      workspace: z.string().default('false').describe('Use Horizon workspace aggregation'),
+    },
+  }, async ({ files, base, head, workspace }) => {
+    const paths = files.split(',').map((item) => item.trim()).filter(Boolean);
+    const workspaceMode = workspace === 'true';
+    const tool = workspaceMode ? 'horizon_workspace_gate' : 'horizon_gate';
+    const contextTool = workspaceMode ? 'horizon_workspace_context' : 'horizon_context';
+    return {
+      messages: [{
+        role: 'user',
+        content: {
+          type: 'text',
+          text: [
+            'Review the following change using Horizon before writing code:',
+            '',
+            ...paths.map((file) => `- ${file}`),
+            '',
+            `1. Use ${contextTool} to find decisions that govern these paths.`,
+            '2. Read each decision, its alternatives, evidence, and policy before assuming intent.',
+            `3. Run ${tool} with the requested range and changed paths.`,
+            '4. If the gate blocks, stop and either propose a decision update with evidence or revise the plan.',
+            '5. Summarize the verdict, evidence quality, and any blocking findings.',
+            '',
+            'Use the Horizon MCP resources only as read-only context. Do not invent evidence or bypass a policy.',
+          ].join('\n'),
+        },
+      }],
+    };
+  });
+
+  server.registerPrompt('horizon_decision_capture', {
+    title: 'Capture a governed decision',
+    description: 'Capture a durable decision with alternatives, evidence, scope, and policy',
+    argsSchema: {
+      title: z.string().min(3).describe('Decision title'),
+      summary: z.string().min(1).describe('One-sentence summary'),
+      scope: z.string().optional().describe('Comma-separated file or directory scopes'),
+      policy: z.string().optional().describe('Optional policy, e.g. block/verified'),
+    },
+  }, async ({ title, summary, scope, policy }) => ({
+    messages: [{
+      role: 'user',
+      content: {
+        type: 'text',
+        text: [
+          'Capture a Horizon decision for:',
+          '',
+          `Title: ${title}`,
+          `Summary: ${summary}`,
+          `Scope: ${scope || 'not specified'}`,
+          `Policy: ${policy || 'not specified'}`,
+          '',
+          '1. Search the ledger for an existing or contradictory decision first.',
+          '2. If no decision exists, call horizon_create with status proposed.',
+          '3. Record at least one alternative and why it was rejected or deferred.',
+          '4. Attach local file, commit, doc, or test evidence where possible.',
+          '5. Add a policy only when this decision should affect future changes.',
+          '6. Do not mark the decision decided without human review unless the user explicitly asks.',
+        ].join('\n'),
+      },
+    }],
+  }));
+
+  server.registerPrompt('horizon_release_audit', {
+    title: 'Horizon release audit',
+    description: 'Audit a release range with Horizon gate and evidence tools',
+    argsSchema: {
+      base: z.string().optional().describe('Base ref, tag, or SHA'),
+      head: z.string().default('HEAD').describe('Head ref, tag, or SHA'),
+      workspace: z.string().default('false').describe('Use Horizon workspace aggregation'),
+    },
+  }, async ({ base, head, workspace }) => {
+    const workspaceMode = workspace === 'true';
+    return {
+    messages: [{
+      role: 'user',
+      content: {
+        type: 'text',
+        text: [
+          'Audit the release range with Horizon:',
+          '',
+          `Base: ${base || 'not specified'}`,
+          `Head: ${head}`,
+          `Workspace mode: ${workspaceMode}`,
+          '',
+          '1. Run the matching Horizon gate for the range.',
+          '2. Export the Horizon evidence package if the gate is acceptable.',
+          '3. Verify the evidence pack, gate report, digest, and verdict before publishing.',
+          '4. Report pass, warn, or block with decision ids and evidence findings.',
+          '5. Never claim compliance from a warning; warn means human review is required.',
+        ].join('\n'),
+      },
+    }],
+    };
+  });
 
   server.registerResource('Horizon decisions', 'horizon://decisions', {
     description: 'All decisions in the current Horizon Ledger',

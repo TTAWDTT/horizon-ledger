@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.25.0
+
+- Added MCP prompt templates for governed change review, decision capture, and release auditing.
+- Added `horizon_change_review`, `horizon_decision_capture`, and `horizon_release_audit` prompts.
+
 ## 0.24.0
 
 - Added MCP resources for browsing decisions and workspace packs.
