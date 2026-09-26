@@ -2,6 +2,7 @@ export type DecisionStatus = 'draft' | 'proposed' | 'decided' | 'rejected' | 'su
 export type EvidenceType = 'commit' | 'file' | 'link' | 'doc' | 'test' | 'experiment' | 'meeting' | 'session' | 'benchmark';
 export type EvidenceStrength = 'strong' | 'moderate' | 'weak';
 export type AlternativeVerdict = 'accepted' | 'rejected' | 'deferred' | 'unknown';
+export type DecisionRelation = 'supersedes' | 'depends_on' | 'related_to';
 
 export interface Evidence {
   id: string;
@@ -22,6 +23,12 @@ export interface Alternative {
   evidenceIds?: string[];
 }
 
+export interface DecisionLink {
+  id: string;
+  type: DecisionRelation;
+  note?: string;
+}
+
 export interface Decision {
   id: string;
   title: string;
@@ -40,6 +47,6 @@ export interface Decision {
   owner?: string;
   alternatives?: Alternative[];
   evidence?: Evidence[];
-  links?: string[];
+  links?: DecisionLink[];
   body?: string;
 }

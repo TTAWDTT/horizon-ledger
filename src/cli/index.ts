@@ -6,6 +6,7 @@ import {
   createDecision,
   updateDecision,
   addEvidence,
+  addLink,
   validateLedger,
   searchLedger,
   buildGraph,
@@ -83,6 +84,24 @@ program
       scope: options.scope,
     });
     console.log(`Created decision ${created.id}: ${created.title}`);
+  });
+
+
+program
+  .command('link <from> <to>')
+  .description('Create a relationship between two decisions')
+  .option('-t, --type <type>', 'supersedes | depends_on | related_to', 'related_to')
+  .option('-n, --note <note>', 'relationship note')
+  .option('-r, --root <path>', 'project root', '.')
+  .action(async (from: string, to: string, options) => {
+    const root = path.resolve(options.root ?? '.');
+    const updated = await addLink(root, from, { id: to, type: options.type, note: options.note });
+    if (!updated) {
+      console.error('Decision not found: ' + from);
+      process.exitCode = 1;
+      return;
+    }
+    console.log('Linked ' + from + ' ' + options.type + ' ' + to);
   });
 
 program

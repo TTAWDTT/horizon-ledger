@@ -23,6 +23,10 @@ export function buildGraph(ledger: Decision[]): { nodes: GraphNode[]; edges: Gra
       nodes.push({ id: altId, label: a.name, kind: 'alternative', status: a.verdict });
       edges.push({ from: d.id, to: altId, label: a.verdict });
     }
+    
+    for (const link of d.links ?? []) {
+      edges.push({ from: d.id, to: link.id, label: link.type });
+    }
     for (const e of d.evidence ?? []) {
       const evId = `${d.id}-E-${e.id}`;
       nodes.push({ id: evId, label: e.title || e.value, kind: 'evidence', status: e.strength });

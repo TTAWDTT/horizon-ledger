@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { parseFrontMatter, encodeFrontMatter } from './frontmatter';
-import type { Decision, DecisionStatus, Evidence } from './types';
+import type { Decision, DecisionLink, DecisionStatus, Evidence } from './types';
 import { slugify, nextId, newEvidenceId } from './utils';
 
 export interface LedgerConfig {
@@ -119,6 +119,22 @@ export async function updateDecision(root: string, id: string, patch: Partial<De
   const content = encodeFrontMatter(toFront(merged), renderBody(merged));
   await fs.writeFile(file, content, 'utf8');
   return merged;
+}
+
+
+export async function addLink(root: string, id: string, link: DecisionLink): Promise<Decision | undefined> {
+  const all = await readLedger(root);
+  const found = all.find((d) => d.id === id);
+  if (!found) return undefined;
+  const links = found.links ?? [];
+  if (links.some((l) => l.id === link.id && l.type === link.type)) {
+    return found;
+  }
+  const updated = { ...found, links: [...(found.links ?? []), link], updatedAt: new Date().toISOString() };
+  const file = await decisionFilePath(root, found.id);
+  const content = encodeFrontMatter(toFront(updated), renderBody(updated));
+  await fs.writeFile(file, content, 'utf8');
+  return updated;
 }
 
 export async function addEvidence(root: string, id: string, input: Omit<Evidence, 'id'>): Promise<Decision | undefined> {
