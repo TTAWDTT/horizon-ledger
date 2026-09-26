@@ -29,7 +29,10 @@
     "ai-agents",
     "local-first",
     "developer-tools",
-    "provenance"
+    "provenance",
+    "workspace",
+    "cross-repo",
+    "pack"
   ],
   "author": "Codex",
   "license": "MIT",
