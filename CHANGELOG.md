@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.0
+
+- Added evidence audit for local paths, Git commits, external URLs, and sha256-sealed files.
+- Added `horizon audit` CLI, `horizon_audit` MCP tool, and structured audit API.
+- Added optional sha256 hash to evidence.
+
 ## 0.6.0
 
 - Added a safe ADR Markdown importer with dry-run, evidence preservation, alternatives, and skip-on-repeat.

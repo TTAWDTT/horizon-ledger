@@ -9,6 +9,7 @@ import {
   scoreDecision,
   validateLedger,
   findConflicts,
+  auditLedger,
   decisionsForFile,
   createDecision,
   updateDecision,
@@ -57,6 +58,7 @@ const evidenceInputSchema = z.object({
   source: z.string().optional().describe('Source of the evidence'),
   strength: strengthSchema.default('moderate').describe('How strongly this supports the decision'),
   note: z.string().optional().describe('Why this evidence matters'),
+  hash: z.string().regex(/^[a-f0-9]{64}$/i).optional().describe('Expected sha256 hash for local file evidence'),
 });
 
 export interface McpServerOptions {
@@ -66,7 +68,7 @@ export interface McpServerOptions {
 export function createMcpServer(rootArg?: string, options: McpServerOptions = {}): McpServer {
   const root = path.resolve(rootArg ?? process.env.HORIZON_ROOT ?? '.');
   const allowWrite = options.write ?? process.env.HORIZON_MCP_WRITE === '1';
-  const server = new McpServer({ name: 'horizon-ledger', version: '0.6.0' });
+  const server = new McpServer({ name: 'horizon-ledger', version: '0.7.0' });
 
   server.registerTool('horizon_list', {
     description: 'List all decisions in the current Horizon Ledger',
@@ -123,6 +125,12 @@ export function createMcpServer(rootArg?: string, options: McpServerOptions = {}
     inputSchema: {},
     annotations: { readOnlyHint: true },
   }, async () => jsonResult(findConflicts(await readLedger(root))));
+  server.registerTool('horizon_audit', {
+    description: 'Verify that decision evidence targets actually exist',
+    inputSchema: {},
+    annotations: { readOnlyHint: true },
+  }, async () => jsonResult(await auditLedger(await readLedger(root), root)));
+
   if (allowWrite) {
   server.registerTool('horizon_create', {
     description: 'Capture a durable decision with context, alternatives, consequences, and optional evidence',
@@ -229,6 +237,7 @@ export function createMcpServer(rootArg?: string, options: McpServerOptions = {}
       source: z.string().optional().describe('Evidence source'),
       strength: strengthSchema.default('moderate').describe('How strongly this supports the decision'),
       note: z.string().optional().describe('Why this evidence matters'),
+      hash: z.string().regex(/^[a-f0-9]{64}$/i).optional().describe('Expected sha256 hash for local file evidence'),
     },
     annotations: { readOnlyHint: false, destructiveHint: false },
   }, async ({ id, ...evidence }: { id: string } & Record<string, unknown>) => {

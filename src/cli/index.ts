@@ -10,6 +10,7 @@ import {
   validateLedger,
   findConflicts,
   importAdrDirectory,
+  auditLedger,
   searchLedger,
   buildGraph,
   scoreDecision,
@@ -26,7 +27,7 @@ const program = new Command();
 program
   .name('horizon')
   .description('Local-first decision ledger for humans and AI agents.')
-  .version('0.6.0');
+  .version('0.7.0');
 
 program
   .command('init')
@@ -334,12 +335,28 @@ program
   });
 
 program
+  .command('audit')
+  .description('Verify that decision evidence targets actually exist')
+  .option('-r, --root <path>', 'project root', '.')
+  .action(async (options) => {
+    const root = path.resolve(options.root ?? '.');
+    const ledger = await readLedger(root);
+    const audit = await auditLedger(ledger, root);
+    console.log(`verified=${audit.verified} missing=${audit.missing} external=${audit.external} unverifiable=${audit.unverifiable}`);
+    for (const finding of audit.findings) {
+      console.log(`${finding.status.toUpperCase()}\t${finding.decisionId}\t${finding.evidenceId}\t${finding.message}`);
+    }
+    if (audit.missing > 0) process.exitCode = 1;
+  });
+
+program
   .command('evidence <id>')
   .description('Add evidence to a decision')
   .option('-t, --type <type>', 'commit | file | link | doc | test | experiment | meeting | session | benchmark', 'link')
   .option('-v, --value <value>', 'evidence value (url, commit, path, etc.)')
   .option('-n, --note <note>', 'evidence note')
   .option('--strength <strength>', 'strong | moderate | weak', 'moderate')
+  .option('--hash <hash>', 'expected sha256 hash for local file evidence')
   .option('-r, --root <path>', 'project root', '.')
   .action(async (id: string, options) => {
     const root = path.resolve(options.root ?? '.');
@@ -353,6 +370,7 @@ program
       value: options.value,
       note: options.note,
       strength: options.strength,
+      hash: options.hash,
     });
     if (!updated) {
       console.error(`Decision not found: ${id}`);

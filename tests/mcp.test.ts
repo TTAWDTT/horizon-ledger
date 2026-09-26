@@ -27,6 +27,7 @@ describe('MCP server', () => {
     const names = tools.tools.map((tool: any) => tool.name);
     expect(names).toContain('horizon_search');
     expect(names).toContain('horizon_conflicts');
+    expect(names).toContain('horizon_audit');
     expect(names).not.toContain('horizon_create');
     await readonly.close();
   });

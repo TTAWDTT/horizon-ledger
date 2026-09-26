@@ -105,6 +105,7 @@ Read-only is the default. To allow decision capture, use `horizon mcp --write`.
 - GitHub Action validation (shipped)
 - conflict detection (started)
 - ADR import (shipped)
+- evidence audit (started)
 - sync protocol and team mode
 
 ## Why open source

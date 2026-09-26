@@ -13,6 +13,7 @@ export interface Evidence {
   strength?: EvidenceStrength;
   note?: string;
   createdAt?: string;
+  hash?: string;
 }
 
 export interface Alternative {

@@ -34,6 +34,7 @@ evidence:
     value: https://sqlite.org
     title: SQLite docs
     strength: strong
+    hash: 0000000000000000000000000000000000000000000000000000000000000000
 ---
 
 ## Summary
