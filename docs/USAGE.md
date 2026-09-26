@@ -18,6 +18,7 @@ horizon conflicts
 horizon audit
 horizon pr-context --base main --head HEAD
 horizon graph
+horizon gate --base main --head HEAD
 horizon export --format markdown --out DECISIONS.md
 horizon doctor
 horizon web
@@ -110,3 +111,4 @@ For a monorepo workspace, use the same action with workspace aggregation:
     strict: true
     workspace: true
 ```
+

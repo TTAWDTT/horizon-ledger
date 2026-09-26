@@ -28,6 +28,9 @@ alternatives:
     name: Postgres
     verdict: rejected
     reason: More operational overhead for a local-first tool.
+policy:
+  mode: block
+  requireEvidence: verified
 evidence:
   - id: E-001
     type: link

@@ -44,13 +44,14 @@ The server is read-only by default. Add `--write` only when you want the agent t
 - `horizon_workspace_validate` — validate workspace roots and cross-root conflicts
 - `horizon_workspace_pack_export` — export a deterministic, hash-bound workspace pack
 - `horizon_workspace_pack_import_plan` — plan an import without writing
+- `horizon_gate` — check changed paths against opt-in decision policies
 - `horizon_context`
 
 ## Write tools
 
 Enabled only with `horizon mcp --write` or `HORIZON_MCP_WRITE=1`.
 
-- `horizon_create` — require context, decision, consequences, at least one alternative, and optional evidence
+- `horizon_create` — require context, decision, consequences, at least one alternative, optional evidence, and an optional gate policy
 - `horizon_update` — patch selected fields without erasing omitted fields
 - `horizon_link` — relate, supersede, or express dependencies between decisions
 - `horizon_add_alternative` — record another considered option

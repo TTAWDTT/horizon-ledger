@@ -24,6 +24,11 @@ export interface Alternative {
   evidenceIds?: string[];
 }
 
+export interface DecisionPolicy {
+  mode?: 'observe' | 'review' | 'block';
+  requireEvidence?: 'any' | 'verified' | 'strong';
+}
+
 export interface DecisionLink {
   id: string;
   type: DecisionRelation;
@@ -47,6 +52,7 @@ export interface Decision {
   tags?: string[];
   owner?: string;
   alternatives?: Alternative[];
+  policy?: DecisionPolicy;
   evidence?: Evidence[];
   links?: DecisionLink[];
   body?: string;

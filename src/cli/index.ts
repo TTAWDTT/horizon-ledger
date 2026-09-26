@@ -13,7 +13,10 @@ import {
   auditLedger,
   buildContextBundle,
   contextBundleMarkdown,
+  buildPullRequestGate,
+  buildChangeGate,
   buildPullRequestContext,
+  changeGateMarkdown,
   pullRequestContextMarkdown,
   searchLedger,
   buildGraph,
@@ -100,6 +103,8 @@ program
   .option('-f, --consequences <consequences>', 'consequences')
   .option('--tag <tag>', 'tag (repeatable)', (v: string, prev: string[]) => [...(prev ?? []), v], [])
   .option('--scope <scope>', 'scope (repeatable)', (v: string, prev: string[]) => [...(prev ?? []), v], [])
+  .option('--policy-mode <mode>', 'observe | review | block')
+  .option('--policy-evidence <level>', 'any | verified | strong')
   .option('-r, --root <path>', 'project root', '.')
   .action(async (options) => {
     const root = path.resolve(options.root ?? '.');
@@ -120,6 +125,9 @@ program
       consequences: options.consequences,
       tags: options.tag,
       scope: options.scope,
+      policy: options.policyMode || options.policyEvidence
+        ? { mode: options.policyMode, requireEvidence: options.policyEvidence }
+        : undefined,
     });
     console.log(`Created decision ${created.id}: ${created.title}`);
   });
@@ -153,6 +161,8 @@ program
   .option('-f, --consequences <consequences>', 'new consequences')
   .option('--tag <tag>', 'tag (repeatable)', (v: string, prev: string[]) => [...(prev ?? []), v], [])
   .option('--scope <scope>', 'scope (repeatable)', (v: string, prev: string[]) => [...(prev ?? []), v], [])
+  .option('--policy-mode <mode>', 'new policy mode: observe | review | block')
+  .option('--policy-evidence <level>', 'new policy evidence requirement: any | verified | strong')
   .option('-r, --root <path>', 'project root', '.')
   .action(async (id: string, options) => {
     const root = path.resolve(options.root ?? '.');
@@ -398,6 +408,37 @@ program
       console.log('Wrote ' + options.out);
     } else {
       console.log(payload);
+    }
+  });
+
+program
+  .command('gate')
+  .description('Check changed files against policy-governed decisions')
+  .option('-b, --base <sha>', 'base ref or sha')
+  .option('-h, --head <sha>', 'head ref or sha', 'HEAD')
+  .option('--file <path>', 'changed path (repeatable)', (v: string, prev: string[]) => [...(prev ?? []), v], [])
+  .option('-f, --format <format>', 'json | markdown', 'markdown')
+  .option('-o, --out <path>', 'write to a file instead of stdout')
+  .option('-r, --root <path>', 'project root', '.')
+  .action(async (options: { base?: string; head?: string; file?: string[]; format?: string; out?: string; root?: string }) => {
+    const root = path.resolve(options.root ?? '.');
+    try {
+      const files = options.file?.length ? options.file : undefined;
+      const gate = files
+        ? await buildChangeGate(root, files)
+        : await buildPullRequestGate(root, options.base ?? 'HEAD~1', options.head ?? 'HEAD', files);
+      const payload = options.format === 'json' ? JSON.stringify(gate, null, 2) : changeGateMarkdown(gate);
+      const outPath = options.out;
+      if (outPath) {
+        await import('node:fs/promises').then((fs) => fs.writeFile(outPath, payload, 'utf8'));
+        console.log('Wrote ' + outPath);
+      } else {
+        console.log(payload);
+      }
+      if (gate.verdict === 'block') process.exitCode = 1;
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
     }
   });
 

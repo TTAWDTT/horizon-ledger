@@ -111,6 +111,7 @@ describe('MCP server', () => {
           confidence: 'high',
           scope: ['src/core'],
           tags: ['storage'],
+          policy: { mode: 'review', requireEvidence: 'any' },
           alternatives: [
             { name: 'JSON files', verdict: 'rejected', reason: 'No concurrent consistency.' },
           ],
@@ -122,14 +123,16 @@ describe('MCP server', () => {
       expect(created.id).toBe('D-0001');
       expect(created.alternatives[0].id).toBe('A-001');
       expect(created.evidence[0].id).toBe('E-001');
+      expect(created.policy).toEqual({ mode: 'review', requireEvidence: 'any' });
 
       const updated = parseResult(await client.callTool({
         name: 'horizon_update',
-        arguments: { id: created.id, summary: 'SQLite is simple, portable, and tested.' },
+        arguments: { id: created.id, summary: 'SQLite is simple, portable, and tested.', policy: { mode: 'block', requireEvidence: 'strong' } },
       }));
       expect(updated.summary).toContain('tested');
       expect(updated.alternatives.length).toBe(1);
       expect(updated.evidence.length).toBe(1);
+      expect(updated.policy).toEqual({ mode: 'block', requireEvidence: 'strong' });
 
       const alternative = parseResult(await client.callTool({
         name: 'horizon_add_alternative',

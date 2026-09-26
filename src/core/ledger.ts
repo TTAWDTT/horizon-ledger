@@ -97,6 +97,7 @@ export async function createDecision(root: string, input: Partial<Decision> & { 
     tags: input.tags ?? [],
     owner: input.owner,
     alternatives: input.alternatives ?? [],
+    policy: input.policy,
     evidence: input.evidence ?? [],
     links: input.links ?? [],
     summary: input.summary ?? '',
@@ -199,6 +200,7 @@ function toFront(d: Decision): any {
     owner: d.owner,
     links: d.links,
     alternatives: d.alternatives,
+    policy: d.policy,
     evidence: d.evidence,
   };
 }

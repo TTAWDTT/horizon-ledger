@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.14.0
+
+- Added an opt-in evidence-aware change gate with `observe`, `review`, and `block` policies.
+- Added `horizon gate` and the read-only `horizon_gate` MCP tool.
+- Added policy metadata validation for mode and evidence requirements.
+- Enabled MCP write tools to create and update decision policies.
+
 ## 0.13.0
 
 - Added read-only workspace pack import planning and explicit `--write` apply.

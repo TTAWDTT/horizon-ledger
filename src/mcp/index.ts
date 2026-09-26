@@ -12,6 +12,7 @@ import {
   auditLedger,
   buildContextBundle,
   decisionsForFile,
+  buildPullRequestGate,
   auditWorkspace,
   getWorkspaceDecision,
   buildWorkspaceContext,
@@ -27,6 +28,7 @@ import {
   addAlternative,
   addEvidence,
   type Decision,
+  type DecisionPolicy,
 } from '../core';
 
 function text(value: unknown) {
@@ -53,6 +55,11 @@ const alternativeVerdictSchema = z.enum(['accepted', 'rejected', 'deferred', 'un
 
 
 const relationSchema = z.enum(['supersedes', 'depends_on', 'related_to']);
+
+const policyInputSchema = z.object({
+  mode: z.enum(['observe', 'review', 'block']).default('review').describe('Whether the gate records, warns, or blocks'),
+  requireEvidence: z.enum(['any', 'verified', 'strong']).default('verified').describe('Evidence quality required by the gate'),
+}).optional();
 
 function workspaceNotFound(root: string) {
   return {
@@ -85,7 +92,7 @@ export interface McpServerOptions {
 export function createMcpServer(rootArg?: string, options: McpServerOptions = {}): McpServer {
   const root = path.resolve(rootArg ?? process.env.HORIZON_ROOT ?? '.');
   const allowWrite = options.write ?? process.env.HORIZON_MCP_WRITE === '1';
-  const server = new McpServer({ name: 'horizon-ledger', version: '0.13.0' });
+  const server = new McpServer({ name: 'horizon-ledger', version: '0.14.0' });
 
   server.registerTool('horizon_list', {
     description: 'List all decisions in the current Horizon Ledger',
@@ -215,6 +222,24 @@ export function createMcpServer(rootArg?: string, options: McpServerOptions = {}
       };
     }
   });
+  server.registerTool('horizon_gate', {
+    description: 'Check changed files against policy-governed decisions',
+    inputSchema: {
+      base: z.string().optional().describe('Base ref or sha; defaults to HEAD~1'),
+      head: z.string().optional().describe('Head ref or sha; defaults to HEAD'),
+      files: z.array(z.string()).optional().describe('Changed paths to check'),
+    },
+    annotations: { readOnlyHint: true },
+  }, async ({ base, head, files }: { base?: string; head?: string; files?: string[] }) => {
+    try {
+      return jsonResult(await buildPullRequestGate(root, base ?? 'HEAD~1', head ?? 'HEAD', files));
+    } catch (error) {
+      return {
+        content: [{ type: 'text' as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      };
+    }
+  });
   server.registerTool('horizon_validate', {
     description: 'Validate the ledger and return diagnostics',
     inputSchema: {},
@@ -257,6 +282,7 @@ export function createMcpServer(rootArg?: string, options: McpServerOptions = {}
       owner: z.string().optional().describe('Decision owner'),
       tags: z.array(z.string()).default([]).describe('Tags'),
       scope: z.array(z.string()).default([]).describe('Files or directories affected'),
+      policy: policyInputSchema.describe('Optional gate policy for this decision'),
       alternatives: z.array(alternativeInputSchema).min(1).describe('At least one alternative considered'),
       evidence: z.array(evidenceInputSchema).default([]).describe('Evidence supporting the decision'),
     },
@@ -267,7 +293,7 @@ export function createMcpServer(rootArg?: string, options: McpServerOptions = {}
     confidence?: 'low' | 'medium' | 'high';
     horizon?: 'short' | 'medium' | 'long';
     kind?: 'engineering' | 'product' | 'research' | 'process' | 'other';
-    owner?: string; tags?: string[]; scope?: string[];
+    owner?: string; tags?: string[]; scope?: string[]; policy?: DecisionPolicy;
     alternatives: Array<{ name: string; verdict?: 'accepted' | 'rejected' | 'deferred' | 'unknown'; reason?: string; evidenceIds?: string[] }>;
     evidence?: Array<{ type: any; value: string; title?: string; source?: string; strength?: any; note?: string }>;
   }) => {
@@ -295,6 +321,7 @@ export function createMcpServer(rootArg?: string, options: McpServerOptions = {}
       owner: z.string().optional(),
       tags: z.array(z.string()).optional(),
       scope: z.array(z.string()).optional(),
+      policy: policyInputSchema,
     },
     annotations: { readOnlyHint: false, destructiveHint: false },
   }, async (args: { id: string } & Record<string, unknown>) => {

@@ -56,11 +56,16 @@ horizon graph
 horizon import-adr docs/adr --dry-run
 horizon context src/core
 horizon pr-context --base main --head HEAD
+horizon gate --base main --head HEAD
 horizon export --format markdown --out DECISIONS.md
 
 horizon doctor
 horizon web
 ```
+
+## Change gate
+
+See [docs/POLICY.md](docs/POLICY.md) for opt-in decision policies.
 
 ## Multi-root workspaces
 
