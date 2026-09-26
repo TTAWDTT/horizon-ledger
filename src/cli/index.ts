@@ -184,7 +184,11 @@ program
   .action(async (query: string, options) => {
     const root = path.resolve(options.root ?? '.');
     const ledger = await readLedger(root);
-    const hits = searchLedger(ledger, query).slice(0, Number(options.limit) || 3);
+    const looksLikePath = /[\\/]/.test(query);
+    const relevant = looksLikePath ? decisionsForFile(ledger, query) : [];
+    const hits = looksLikePath
+      ? relevant.map((decision) => ({ decision, score: 1, reason: 'scope match' }))
+      : searchLedger(ledger, query).slice(0, Number(options.limit) || 3);
     for (const hit of hits) {
       const d = hit.decision;
       console.log(d.id + ' ' + d.title);
