@@ -144,6 +144,22 @@ program
   });
 
 program
+  .command('doctor')
+  .description('Show a quick health summary of the ledger')
+  .option('-r, --root <path>', 'project root', '.')
+  .action(async (options) => {
+    const root = path.resolve(options.root ?? '.');
+    const ledger = await readLedger(root);
+    const diagnostics = validateLedger(ledger);
+    console.log('root=' + root);
+    console.log('decisions=' + ledger.length);
+    console.log('diagnostics=' + diagnostics.length);
+    for (const d of ledger) {
+      console.log(d.id + '\t' + scoreDecision(d).score + '/' + scoreDecision(d).total + '\t' + d.title);
+    }
+  });
+
+program
   .command('list')
   .description('List decisions')
   .option('-r, --root <path>', 'project root', '.')
