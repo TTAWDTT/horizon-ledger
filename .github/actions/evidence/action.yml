@@ -1,0 +1,98 @@
+name: 'Horizon Evidence Package'
+description: 'Export a hash-bound decision evidence package and upload it as a workflow artifact'
+branding:
+  icon: 'package'
+  color: 'purple'
+inputs:
+  base-sha:
+    description: 'Base ref or SHA'
+    required: false
+    default: ${{ github.event.pull_request.base.sha || 'HEAD~1' }}
+  head-sha:
+    description: 'Head ref or SHA'
+    required: false
+    default: 'HEAD'
+  root:
+    description: 'Workspace root containing .horizon/workspace.json'
+    required: false
+    default: '.'
+  artifact:
+    description: 'Upload the evidence package as a workflow artifact'
+    required: false
+    default: 'true'
+  artifact-name:
+    description: 'Name for the uploaded evidence package artifact'
+    required: false
+    default: 'horizon-evidence-package'
+  artifact-retention-days:
+    description: 'Retention days for the uploaded evidence package'
+    required: false
+    default: '90'
+outputs:
+  evidence-pack:
+    description: 'Path to the generated JSON evidence package'
+    value: ${{ steps.horizon.outputs.evidence-pack }}
+  evidence-pack-id:
+    description: 'Canonical SHA-256 evidence package id'
+    value: ${{ steps.horizon.outputs.evidence-pack-id }}
+  gate-verdict:
+    description: 'Verdict from the embedded workspace policy gate report'
+    value: ${{ steps.horizon.outputs.gate-verdict }}
+runs:
+  using: composite
+  steps:
+    - name: Set up Bun
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: latest
+    - name: Install Horizon Ledger
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: bun install --frozen-lockfile
+    - name: Export Horizon evidence package
+      id: horizon
+      shell: bash
+      env:
+        BASE_SHA: ${{ inputs.base-sha }}
+        HEAD_SHA: ${{ inputs.head-sha }}
+        ROOT: ${{ inputs.root }}
+        ACTION_PATH: ${{ github.action_path }}
+      run: |
+        set -euo pipefail
+        EVIDENCE_OUT="${RUNNER_TEMP}/horizon-evidence-package.json"
+        bun run "$ACTION_PATH/../../../src/cli/index.ts" workspace evidence export \
+          --base "$BASE_SHA" \
+          --head "$HEAD_SHA" \
+          --root "$ROOT" \
+          --out "$EVIDENCE_OUT"
+
+        summary="$(node -e "
+          const pack = require(process.argv[1]);
+          const predicate = pack.statement.predicate;
+          console.log('# Horizon evidence package');
+          console.log('');
+          console.log('- Evidence pack id: \`' + pack.evidencePackId + '\`');
+          console.log('- Workspace pack id: \`' + predicate.packId + '\`');
+          console.log('- Gate report id: \`' + predicate.gateReportId + '\`');
+          console.log('- Verdict: **' + predicate.gateVerdict.toUpperCase() + '**');
+          console.log('- Coverage: ' + predicate.coverage.governed + ' governed, ' + predicate.coverage.unguarded + ' unguarded');
+          console.log('- Changed paths: ' + predicate.context.changedFiles.length);
+        " "$EVIDENCE_OUT")"
+        printf '%s\n' "$summary" >> "$GITHUB_STEP_SUMMARY"
+
+        values="$(node -e "
+          const pack = require(process.argv[1]);
+          const predicate = pack.statement.predicate;
+          console.log('evidence-pack=' + process.argv[1]);
+          console.log('evidence-pack-id=' + pack.evidencePackId);
+          console.log('gate-verdict=' + predicate.gateVerdict);
+        " "$EVIDENCE_OUT")"
+        echo "$values" >> "$GITHUB_OUTPUT"
+    - name: Upload Horizon evidence package
+      if: ${{ inputs.artifact == 'true' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ steps.horizon.outputs.evidence-pack }}
+        if-no-files-found: error
+        retention-days: ${{ inputs.artifact-retention-days }}

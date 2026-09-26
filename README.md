@@ -180,3 +180,14 @@ To enforce opt-in policies, add the gate Action:
     root: .
     artifact: true
 ```
+
+To retain the decisions and gate verdict as one artifact, add the evidence Action:
+
+```yaml
+- uses: TTAWDTT/horizon-ledger/.github/actions/evidence@main
+  with:
+    base-sha: ${{ github.event.pull_request.base.sha }}
+    head-sha: ${{ github.event.pull_request.head.sha }}
+    root: .
+    artifact: true
+```

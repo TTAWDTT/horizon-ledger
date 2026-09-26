@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.21.0
+
+- Added a reusable Horizon Evidence Package GitHub Action.
+- Added evidence-package artifact upload and `evidence-pack-id`, `evidence-pack`, and `gate-verdict` outputs.
+
 ## 0.20.0
 
 - Added portable, hash-bound Horizon evidence packages.

@@ -85,3 +85,13 @@ For a single root, add a reusable gate step:
 ```
 
 For a monorepo, set `workspace: true`. The gate exits non-zero on `block`; use `mode: review` for advisory warnings.
+
+For CI retention, add the evidence Action after the gate:
+
+```yaml
+- uses: TTAWDTT/horizon-ledger/.github/actions/evidence@main
+  with:
+    base-sha: ${{ github.event.pull_request.base.sha }}
+    head-sha: ${{ github.event.pull_request.head.sha }}
+    artifact: true
+```

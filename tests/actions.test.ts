@@ -6,6 +6,7 @@ const actionFiles = [
   '.github/actions/gate/action.yml',
   '.github/actions/pr-context/action.yml',
   '.github/actions/validate/action.yml',
+  '.github/actions/evidence/action.yml',
 ];
 
 describe('composite actions', () => {
@@ -17,6 +18,13 @@ describe('composite actions', () => {
     }
   });
 
+  it('supports evidence package artifact upload', async () => {
+    const content = await fs.readFile(path.join(process.cwd(), '.github/actions/evidence/action.yml'), 'utf8');
+    expect(content).toContain('workspace evidence export');
+    expect(content).toContain('evidence-pack-id');
+    expect(content).toContain('gate-verdict');
+    expect(content).toContain('actions/upload-artifact@v4');
+  });
   it('supports hash-bound gate reports and artifact upload', async () => {
     const content = await fs.readFile(path.join(process.cwd(), '.github/actions/gate/action.yml'), 'utf8');
     expect(content).toContain('--report');

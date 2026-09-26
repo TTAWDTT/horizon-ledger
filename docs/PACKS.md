@@ -71,3 +71,18 @@ Artifact digests are calculated over the canonical JSON serialization of the emb
 - `inspect` validates without writing.
 - `verify` can additionally require exact pack, report, digest, or verdict values.
 - No signing or network call is required. The embedded in-toto Statement is signature-envelope ready, so an external DSSE/Sigstore workflow can sign it when your environment has key management.
+
+## CI
+
+Use the reusable Action to publish a PR or release evidence package:
+
+```yaml
+- uses: TTAWDTT/horizon-ledger/.github/actions/evidence@main
+  with:
+    base-sha: ${{ github.event.pull_request.base.sha }}
+    head-sha: ${{ github.event.pull_request.head.sha }}
+    root: .
+    artifact: true
+```
+
+The Action exposes `evidence-pack`, `evidence-pack-id`, and `gate-verdict` outputs and uploads the JSON package.
