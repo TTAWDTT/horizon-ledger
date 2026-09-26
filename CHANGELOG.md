@@ -5,6 +5,7 @@
 - Added opt-in MCP write tools for decision capture and updates.
 - Enforced alternatives and evidence-aware decision capture in MCP writes.
 - Kept the default MCP server read-only for safety.
+- Added a reusable GitHub Action for strict ledger validation.
 
 ## 0.3.0
 

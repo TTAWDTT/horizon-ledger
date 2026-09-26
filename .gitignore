@@ -8,3 +8,5 @@ coverage/
 .DS_Store
 .playwright-cli/
 output/playwright/
+.tmp/
+.tmp-horizon-action-test/

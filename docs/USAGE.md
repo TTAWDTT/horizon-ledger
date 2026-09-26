@@ -29,3 +29,14 @@ horizon web --port 4173
 ```
 
 The dashboard exposes a local-only API at `/api/ledger` and includes the ledger, scores, graph, and diagnostics. It intentionally has no remote dependencies, so private decision context stays on your machine.
+
+## GitHub Action
+
+```yaml
+- uses: TTAWDTT/horizon-ledger/.github/actions/validate@main
+  with:
+    root: .
+    strict: true
+```
+
+Set `strict: false` to allow warnings while still catching errors.

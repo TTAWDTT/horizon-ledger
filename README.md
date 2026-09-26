@@ -101,7 +101,7 @@ Read-only is the default. To allow decision capture, use `horizon mcp --write`.
 - CLI and Markdown ledger (shipped)
 - MCP server for coding agents (started)
 - local web dashboard (shipped)
-- GitHub Action and PR integration
+- GitHub Action validation (shipped)
 - evidence scoring and conflict detection
 - sync protocol and team mode
 
@@ -112,3 +112,16 @@ Horizon Ledger is open source under MIT. The project will be developed and itera
 ## Contributing
 
 Issues and pull requests are welcome. Please keep changes small and evidence-focused.
+
+## CI validation
+
+Add this step to a workflow:
+
+```yaml
+- uses: TTAWDTT/horizon-ledger/.github/actions/validate@main
+  with:
+    root: .
+    strict: true
+```
+
+The Action installs Horizon from this repository and runs the same decision validator used by the CLI, so warnings and errors fail before the PR is merged.
