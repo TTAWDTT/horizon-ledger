@@ -17,7 +17,9 @@ scope:
 tags:
   - storage
 owner: Codex
-links: []
+links:
+  - id: D-0002
+    type: supersedes
 alternatives:
   - id: A
     name: SQLite
@@ -52,3 +54,4 @@ Simple local setup. Some tradeoffs for concurrent writes and complex queries.
 ```
 
 Horizon Ledger intentionally uses Markdown for human readability and YAML for machine readability.
+
