@@ -491,7 +491,8 @@ workspace
   .command('validate')
   .description('Validate all enabled workspace roots as one ledger')
   .option('-r, --root <path>', 'workspace root', '.')
-  .action(async (options: { root?: string }) => {
+  .option('--strict', 'fail on warnings as well as errors')
+  .action(async (options: { root?: string; strict?: boolean }) => {
     const root = path.resolve(options.root ?? '.');
     try {
       const result = await validateWorkspace(root);
@@ -499,7 +500,7 @@ workspace
       for (const diagnostic of result.diagnostics) {
         console.log(`${diagnostic.level.toUpperCase()}\t${diagnostic.rootName ?? '-'}\t${diagnostic.id ?? '-'}\t${diagnostic.message}`);
       }
-      if (!result.ok) process.exitCode = 1;
+      if (!result.ok || (options.strict && result.diagnostics.length > 0)) process.exitCode = 1;
     } catch (error) {
       console.error(error instanceof Error ? error.message : String(error));
       process.exitCode = 1;
