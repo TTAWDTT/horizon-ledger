@@ -106,6 +106,21 @@ export interface WorkspacePullRequestContext {
   };
   diagnostics: WorkspaceDiagnostic[];
 }
+export interface WorkspaceExport {
+  version: 1;
+  name: string;
+  roots: WorkspaceRootSummary[];
+  decisions: WorkspaceDecision[];
+  conflicts: ReturnType<typeof findConflicts>;
+  diagnostics: WorkspaceDiagnostic[];
+  audit: {
+    verified: number;
+    missing: number;
+    external: number;
+    unverifiable: number;
+    findings: WorkspaceAuditFinding[];
+  };
+}
 export interface WorkspaceAudit {
   name: string;
   roots: WorkspaceRootSummary[];
@@ -534,6 +549,67 @@ export function workspacePullRequestContextMarkdown(context: WorkspacePullReques
     lines.push('');
   }
 
+  return lines.join('\n');
+}
+export async function exportWorkspace(
+  root: string,
+  config?: WorkspaceConfig,
+): Promise<WorkspaceExport> {
+  const workspace = config ?? await readWorkspace(root);
+  if (!workspace) throw new Error(`No Horizon workspace found at ${path.resolve(root)}`);
+  const entries = await readWorkspaceLedger(root, workspace);
+  const diagnostics = await workspaceDiagnostics(root, entries, workspace);
+  const audit = await auditWorkspace(root, workspace);
+  return {
+    version: 1,
+    name: workspace.name,
+    roots: workspaceRootSummaries(workspace, entries),
+    decisions: entries,
+    conflicts: findConflicts(entries.map((entry) => entry.decision)),
+    diagnostics,
+    audit: {
+      verified: audit.verified,
+      missing: audit.missing,
+      external: audit.external,
+      unverifiable: audit.unverifiable,
+      findings: audit.findings,
+    },
+  };
+}
+
+export function workspaceExportMarkdown(exported: WorkspaceExport): string {
+  const lines: string[] = [
+    `# ${exported.name}`,
+    '',
+    `Roots: ${exported.roots.length}`,
+    `Decisions: ${exported.decisions.length}`,
+    '',
+    '## Roots',
+    '',
+  ];
+  for (const root of exported.roots) {
+    lines.push(`- ${root.name} (${root.path}): ${root.decisions} decision${root.decisions === 1 ? '' : 's'}`);
+  }
+  lines.push('', '## Decisions', '');
+  for (const entry of exported.decisions) {
+    const score = scoreDecision(entry.decision);
+    lines.push(`### [${entry.rootName}] ${entry.decision.id}: ${entry.decision.title}`, '', `Status: ${entry.decision.status}`, `Quality: ${score.score}/${score.total}`, '');
+    if (entry.decision.summary) lines.push(entry.decision.summary.trim(), '');
+    if (entry.decision.decision) lines.push(`**Decision**: ${entry.decision.decision.trim()}`, '');
+    if (entry.decision.consequences) lines.push(`**Consequences**: ${entry.decision.consequences.trim()}`, '');
+  }
+  if (exported.conflicts.length) {
+    lines.push('## Conflicts', '');
+    for (const conflict of exported.conflicts) lines.push(`- [${conflict.level}] ${conflict.message}`);
+    lines.push('');
+  }
+  if (exported.audit.missing) {
+    lines.push('## Missing evidence', '');
+    for (const finding of exported.audit.findings.filter((item) => item.status === 'missing')) {
+      lines.push(`- [${finding.rootName}] ${finding.decisionId}/${finding.evidenceId}: ${finding.message}`);
+    }
+    lines.push('');
+  }
   return lines.join('\n');
 }
 export async function validateWorkspace(

@@ -29,6 +29,7 @@ horizon workspace list
 horizon workspace validate
 horizon workspace audit
 horizon workspace pr-context --base main --head HEAD
+horizon workspace export --format markdown --out WORKSPACE.md
 horizon workspace context storage
 ```
 
@@ -77,7 +78,7 @@ A workspace aggregates decisions from several Horizon roots without copying or c
 }
 ```
 
-Use it when a decision spans a monorepo package, service, client, or infrastructure repository. `workspace context` preserves the root name and path as provenance, while `workspace validate` checks every enabled root as one graph. Duplicate decision IDs, contradictory alternatives, dangling relationships, unreadable roots, and missing local evidence are reported together. `workspace audit` resolves local paths and Git commits inside each root instead of using the workspace root as a blanket target.
+Use it when a decision spans a monorepo package, service, client, or infrastructure repository. `workspace export` creates a portable review or audit report with root provenance and evidence findings. `workspace context` preserves the root name and path as provenance, while `workspace validate` checks every enabled root as one graph. Duplicate decision IDs, contradictory alternatives, dangling relationships, unreadable roots, and missing local evidence are reported together. `workspace audit` resolves local paths and Git commits inside each root instead of using the workspace root as a blanket target.
 
 ### Workspace PR action
 

@@ -25,11 +25,13 @@ import {
   auditWorkspace,
   buildWorkspaceContext,
   buildWorkspacePullRequestContext,
+  exportWorkspace,
   initWorkspace,
   readWorkspace,
   readWorkspaceLedger,
   validateWorkspace,
   workspaceContextMarkdown,
+  workspaceExportMarkdown,
   workspacePullRequestContextMarkdown,
   workspaceSummary,
 } from '../core';
@@ -573,6 +575,31 @@ workspace
       const payload = options.format === 'json'
         ? JSON.stringify(context, null, 2)
         : workspacePullRequestContextMarkdown(context);
+      const outPath = options.out;
+      if (outPath) {
+        await import('node:fs/promises').then((fs) => fs.writeFile(outPath, payload, 'utf8'));
+        console.log('Wrote ' + outPath);
+      } else {
+        console.log(payload);
+      }
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  });
+workspace
+  .command('export')
+  .description('Export workspace decisions, provenance, conflicts, and audit findings')
+  .option('-f, --format <format>', 'json | markdown', 'json')
+  .option('-o, --out <path>', 'write to a file instead of stdout')
+  .option('-r, --root <path>', 'workspace root', '.')
+  .action(async (options: { format?: string; out?: string; root?: string }) => {
+    const root = path.resolve(options.root ?? '.');
+    try {
+      const exported = await exportWorkspace(root);
+      const payload = options.format === 'markdown'
+        ? workspaceExportMarkdown(exported)
+        : JSON.stringify(exported, null, 2);
       const outPath = options.out;
       if (outPath) {
         await import('node:fs/promises').then((fs) => fs.writeFile(outPath, payload, 'utf8'));

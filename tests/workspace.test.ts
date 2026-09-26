@@ -8,12 +8,14 @@ import {
   buildWorkspaceContext,
   buildWorkspacePullRequestContext,
   createDecision,
+  exportWorkspace,
   initLedger,
   initWorkspace,
   readWorkspace,
   readWorkspaceLedger,
   validateWorkspace,
   workspaceContextMarkdown,
+  workspaceExportMarkdown,
   workspacePullRequestContextMarkdown,
   workspaceSummary,
 } from '../src/core';
@@ -74,6 +76,11 @@ describe('horizon workspace', () => {
     expect(audit.decisions).toBe(2);
     expect(audit.verified).toBe(2);
     expect(audit.ok).toBe(true);
+
+    const exported = await exportWorkspace(workspaceRoot);
+    expect(exported.decisions).toHaveLength(2);
+    expect(exported.audit.verified).toBe(2);
+    expect(workspaceExportMarkdown(exported)).toContain('## [first] D-0001');
 
     const validation = await validateWorkspace(workspaceRoot);
     expect(validation.decisions).toBe(2);

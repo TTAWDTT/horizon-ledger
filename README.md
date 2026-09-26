@@ -70,6 +70,7 @@ horizon workspace list
 horizon workspace validate
 horizon workspace audit
 horizon workspace pr-context --base main --head HEAD
+horizon workspace export --format markdown --out WORKSPACE.md
 horizon workspace context storage
 ```
 
