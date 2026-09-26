@@ -15,8 +15,9 @@ horizon score
 horizon validate
 horizon graph
 horizon export --format markdown --out DECISIONS.md
-horizon web
-horizon mcp
+horizon doctor
+horizon webhorizon mcp
 ```
 
 Use `--root <path>` to run against another repository.
+
