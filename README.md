@@ -2,6 +2,9 @@
 
 > A local-first decision ledger for humans and AI agents. Capture **why** decisions were made, prove them with evidence, and query the graph from code, docs, and agents.
 
+[![test](https://github.com/TTAWDTT/horizon-ledger/actions/workflows/test.yml/badge.svg)](https://github.com/TTAWDTT/horizon-ledger/actions/workflows/test.yml)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+
 Horizon Ledger is a small, composable primitive for AI-assisted engineering: not another note app, but a structured, Git-native **ledger of decisions** that can be read by humans, CI, and coding agents.
 
 It answers questions that ADRs and commit logs usually fail to answer over time:
@@ -92,6 +95,7 @@ Horizon Ledger is open source under MIT. The project will be developed and itera
 ## Contributing
 
 Issues and pull requests are welcome. Please keep changes small and evidence-focused.
+
 
 
 
