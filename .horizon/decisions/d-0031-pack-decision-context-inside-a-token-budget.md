@@ -3,7 +3,7 @@ id: D-0031
 title: Pack decision context inside a token budget
 status: decided
 createdAt: 2026-09-26T15:31:57.913Z
-updatedAt: 2026-09-26T15:34:16.577Z
+updatedAt: 2026-09-27T01:11:00.000Z
 confidence: high
 horizon: medium
 kind: engineering
@@ -61,11 +61,10 @@ evidence:
     note: Budget-aware single-root context packing
     hash: 447c5f12cd867037a04e69058beb2adf7bbdf7cd4cb9e43ad6bd4ea5fd96a719
   - id: E-002
-    type: file
-    value: src/core/workspace.ts
+    type: commit
+    value: bf24f9ffa0abc5abec004e31b249f73194900a92
     strength: strong
-    note: Budget-aware multi-root workspace packing
-    hash: 0da8a5ccfb0690a1a2ed2754da67000a2c5fee40c2b18cfe25073a0567d54a72
+    note: Budget-aware multi-root workspace packing sealed as Git history
   - id: E-003
     type: test
     value: tests/context.test.ts
@@ -89,3 +88,5 @@ Add `maxTokens` to context and workspace context APIs, CLI commands, and MCP too
 ## Consequences
 
 Agents can request bounded context without losing the audit trail. Omissions are visible instead of silent. Full context remains the default, so no existing behavior changes.
+
+
