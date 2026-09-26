@@ -115,7 +115,8 @@ export async function updateDecision(root: string, id: string, patch: Partial<De
   const found = all.find((d) => d.id === id);
   if (!found) return undefined;
   const file = await decisionFilePath(root, found.id);
-  const merged = { ...found, ...patch, updatedAt: new Date().toISOString() } as Decision;
+  const patchEntries = Object.entries(patch).filter(([, value]) => value !== undefined);
+  const merged = { ...found, ...Object.fromEntries(patchEntries), updatedAt: new Date().toISOString() } as Decision;
   const content = encodeFrontMatter(toFront(merged), renderBody(merged));
   await fs.writeFile(file, content, 'utf8');
   return merged;
