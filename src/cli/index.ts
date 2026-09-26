@@ -12,6 +12,8 @@ import {
   buildGraph,
   scoreDecision,
   decisionsForFile,
+  exportLedger,
+  exportMarkdown,
 } from '../core';
 import { initLedger } from '../core/ledger';
 import { startMcpServer } from '../mcp';
@@ -312,6 +314,25 @@ program
     const port = Number(options.port) || 4173;
     await startLedgerServer(root, port);
     console.log('Horizon Ledger web viewer listening on http://127.0.0.1:' + port);
+  });
+
+
+program
+  .command('export')
+  .description('Export the ledger as JSON or Markdown')
+  .option('-r, --root <path>', 'project root', '.')
+  .option('-f, --format <format>', 'json | markdown', 'json')
+  .option('-o, --out <path>', 'write to a file instead of stdout')
+  .action(async (options) => {
+    const root = path.resolve(options.root ?? '.');
+    const ledger = await readLedger(root);
+    const payload = options.format === 'markdown' ? exportMarkdown(ledger) : JSON.stringify(exportLedger(ledger), null, 2);
+    if (options.out) {
+      await import('node:fs/promises').then((fs) => fs.writeFile(options.out, payload, 'utf8'));
+      console.log('Wrote ' + options.out);
+    } else {
+      console.log(payload);
+    }
   });
 
 program

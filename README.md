@@ -47,7 +47,7 @@ horizon why sqlite
 horizon scope src/corehorizon score
 horizon validate
 horizon graph
-```
+horizon export --format markdown --out DECISIONS.md```
 
 To use it with an MCP-compatible coding agent:
 
@@ -92,6 +92,7 @@ Horizon Ledger is open source under MIT. The project will be developed and itera
 ## Contributing
 
 Issues and pull requests are welcome. Please keep changes small and evidence-focused.
+
 
 
 

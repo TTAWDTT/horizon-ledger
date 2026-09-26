@@ -7,3 +7,4 @@ export * from './score';
 export * from './validate';
 export * from './utils';
 export * from './relevance';
+export * from './export';
