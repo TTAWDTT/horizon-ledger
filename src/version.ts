@@ -1,3 +1,3 @@
-export const HORIZON_VERSION = '0.29.0';
+export const HORIZON_VERSION = '0.30.0';
 
 

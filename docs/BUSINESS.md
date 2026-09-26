@@ -14,7 +14,8 @@ Horizon Ledger is open source, local-first, and boring by default. The goal is n
 - conflict detection
 - ADR importer
 - export formats
-- deterministic workspace packs, evidence packages, and release audits
+- deterministic workspace packs, evidence packages, release audits, and a local compliance engine
+- a transparent profile format so enterprises can bring their own control mappings
 
 ## Possible paid extensions
 
@@ -22,7 +23,7 @@ These are only useful if the core earns daily use:
 
 1. **Team sync**: encrypted sync between repos and workspaces beyond the free Git-native workflow.
 2. **Private dashboard**: hosted graph, conflict detection, and audit views.
-3. **Compliance packs**: SOC2/ISO-style export with organization mappings, review trails, and signed audit bundles.
+3. **Compliance packs**: ready-made SOC 2/ISO-style mappings, review workflows, and signed audit bundles on top of the free local engine.
 4. **Agent packs**: opinionated templates for specific stacks and workflows.
 
 The project should not invent a cloud dependency until the local primitive is strong enough that teams would actually want it.

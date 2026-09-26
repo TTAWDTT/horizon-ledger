@@ -38,6 +38,10 @@ import {
   exportWorkspaceReleaseAudit,
   inspectWorkspaceReleaseAudit,
   verifyWorkspaceReleaseAudit,
+  exportWorkspaceCompliance,
+  inspectWorkspaceCompliance,
+  parseComplianceProfile,
+  verifyWorkspaceCompliance,
   type Decision,
   type DecisionPolicy,
 } from '../core';
@@ -360,6 +364,84 @@ export function createMcpServer(rootArg?: string, options: McpServerOptions = {}
         traceCommits: expectTraceCommits,
         attributedCommits: expectAttributedCommits,
         unattributedCommits: expectUnattributedCommits,
+      }));
+    } catch (error) {
+      return {
+        content: [{ type: 'text' as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      };
+    }
+  });
+
+  server.registerTool('horizon_workspace_compliance_export', {
+    description: 'Evaluate a raw Horizon compliance profile and export a hash-bound compliance report',
+    inputSchema: {
+      profile: z.string().min(1).describe('Raw Horizon compliance profile JSON or YAML'),
+      format: z.enum(['json', 'yaml']).default('json').describe('Compliance profile input format'),
+    },
+    annotations: { readOnlyHint: true },
+  }, async ({ profile, format }: { profile: string; format?: 'json' | 'yaml' }) => {
+    try {
+      const parsed = parseComplianceProfile(profile, format ?? 'json');
+      return jsonResult(await exportWorkspaceCompliance(root, parsed));
+    } catch (error) {
+      return {
+        content: [{ type: 'text' as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      };
+    }
+  });
+  server.registerTool('horizon_workspace_compliance_inspect', {
+    description: 'Validate and summarize a Horizon compliance report',
+    inputSchema: {
+      report: z.string().min(1).describe('Raw Horizon compliance report JSON'),
+    },
+    annotations: { readOnlyHint: true },
+  }, async ({ report }: { report: string }) => {
+    try {
+      return jsonResult(inspectWorkspaceCompliance(report));
+    } catch (error) {
+      return {
+        content: [{ type: 'text' as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      };
+    }
+  });
+  server.registerTool('horizon_workspace_compliance_verify', {
+    description: 'Verify a Horizon compliance report and optional control expectations',
+    inputSchema: {
+      report: z.string().min(1).describe('Raw Horizon compliance report JSON'),
+      expectReportId: z.string().optional().describe('Required compliance report id'),
+      expectPackId: z.string().optional().describe('Required embedded workspace pack id'),
+      expectProfileId: z.string().optional().describe('Required compliance profile id'),
+      expectProfileDigest: z.string().optional().describe('Required embedded profile digest'),
+      expectFramework: z.string().optional().describe('Required framework'),
+      expectControls: z.number().int().positive().optional().describe('Required control count'),
+      expectPassing: z.number().int().nonnegative().optional().describe('Required passing control count'),
+      expectFailing: z.number().int().nonnegative().optional().describe('Required failing control count'),
+    },
+    annotations: { readOnlyHint: true },
+  }, async ({ report, expectReportId, expectPackId, expectProfileId, expectProfileDigest, expectFramework, expectControls, expectPassing, expectFailing }: {
+    report: string;
+    expectReportId?: string;
+    expectPackId?: string;
+    expectProfileId?: string;
+    expectProfileDigest?: string;
+    expectFramework?: string;
+    expectControls?: number;
+    expectPassing?: number;
+    expectFailing?: number;
+  }) => {
+    try {
+      return jsonResult(verifyWorkspaceCompliance(report, {
+        reportId: expectReportId,
+        packId: expectPackId,
+        profileId: expectProfileId,
+        profileDigest: expectProfileDigest,
+        framework: expectFramework,
+        controls: expectControls,
+        passing: expectPassing,
+        failing: expectFailing,
       }));
     } catch (error) {
       return {

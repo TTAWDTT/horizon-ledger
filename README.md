@@ -94,7 +94,7 @@ This accepts a commit that touches the decision scope or names the decision in i
 
 ## Multi-root workspaces
 
-See [docs/PACKS.md](docs/PACKS.md) for the deterministic pack format.
+See [docs/PACKS.md](docs/PACKS.md) for deterministic pack formats and [docs/COMPLIANCE.md](docs/COMPLIANCE.md) for control profiles.
 
 ```bash
 horizon workspace init
@@ -120,9 +120,13 @@ horizon workspace evidence verify EVIDENCE-PACK.json --expect-verdict pass
 horizon workspace release export --base main --head HEAD --out RELEASE-AUDIT.json
 horizon workspace release inspect RELEASE-AUDIT.json
 horizon workspace release verify RELEASE-AUDIT.json --expect-verdict pass
+
+horizon workspace compliance export COMPLIANCE-PROFILE.yaml --out COMPLIANCE-REPORT.json
+horizon workspace compliance inspect COMPLIANCE-REPORT.json
+horizon workspace compliance verify COMPLIANCE-REPORT.json --expect-profile-id security-baseline
 ```
 
-The MCP server also exposes read-only `horizon_workspace_list`, `horizon_workspace_audit`, `horizon_workspace_context`, `horizon_workspace_validate`, `horizon_workspace_gate`, `horizon_workspace_trace`, `horizon_workspace_pack_export`, `horizon_workspace_pack_import_plan`, `horizon_workspace_evidence_export`, `horizon_workspace_evidence_verify`, `horizon_workspace_release_export`, `horizon_workspace_release_inspect`, and `horizon_workspace_release_verify` tools, so coding agents can query cross-root decisions without a cloud service. Workspace packs, evidence packages, and release audits are deterministic and SHA-256-bound, so you can review, archive, or hand off decisions without a cloud service. Pack import defaults to a read-only plan; add --write to apply it. Workspace configs are validated strictly: duplicate IDs, names, and aliases fail fast instead of silently degrading into a partial graph.
+The MCP server also exposes read-only `horizon_workspace_list`, `horizon_workspace_audit`, `horizon_workspace_context`, `horizon_workspace_validate`, `horizon_workspace_gate`, `horizon_workspace_trace`, `horizon_workspace_pack_export`, `horizon_workspace_pack_import_plan`, `horizon_workspace_evidence_export`, `horizon_workspace_evidence_verify`, `horizon_workspace_release_export`, `horizon_workspace_release_inspect`, and `horizon_workspace_release_verify`, `horizon_workspace_compliance_export`, `horizon_workspace_compliance_inspect`, and `horizon_workspace_compliance_verify` tools, so coding agents can query cross-root decisions without a cloud service. Workspace packs, evidence packages, release audits, and compliance reports are deterministic and SHA-256-bound, so you can review, archive, or hand off decisions without a cloud service. Pack import defaults to a read-only plan; add --write to apply it. Workspace configs are validated strictly: duplicate IDs, names, and aliases fail fast instead of silently degrading into a partial graph.
 
 To run a local decision dashboard:
 
@@ -153,7 +157,7 @@ Read-only is the default. To allow decision capture, use `horizon mcp --write`.
 - structured alternatives, evidence, provenance, and optional sha256 seals
 - graph, search, scoring, cross-repository workspaces, and portable packs
 - a local-only human dashboard with no telemetry
-- optional sha256 evidence seals, commit attribution, hash-bound gate reports, SARIF output, and portable evidence packages
+- optional sha256 evidence seals, commit attribution, hash-bound gate reports, SARIF output, portable evidence packages, and compliance profiles
 - useful for humans, coding agents, and opt-in CI gates
 - no vendor lock-in, no hosted database, no LLM required
 
@@ -177,6 +181,7 @@ Read-only is the default. To allow decision capture, use `horizon mcp --write`.
 - cross-root workspace commit traceability (shipped)
 - portable workspace packs and decision evidence packages (shipped)
 - self-contained in-toto release audits and CI release-audit artifacts (shipped)
+- local compliance-profile evaluation and hash-bound control reports (shipped)
 
 ## Why open source
 

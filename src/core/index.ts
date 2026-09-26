@@ -24,3 +24,4 @@ export * from './commit';
 export * from './trace';
 export * from './workspace-trace';
 export * from './release-audit';
+export * from './compliance';

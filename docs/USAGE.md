@@ -52,6 +52,10 @@ horizon workspace trace --base main --head HEAD
 horizon workspace release export --base main --head HEAD --out RELEASE-AUDIT.json
 horizon workspace release inspect RELEASE-AUDIT.json
 horizon workspace release verify RELEASE-AUDIT.json --expect-verdict pass
+
+horizon workspace compliance export COMPLIANCE-PROFILE.yaml --out COMPLIANCE-REPORT.json
+horizon workspace compliance inspect COMPLIANCE-REPORT.json
+horizon workspace compliance verify COMPLIANCE-REPORT.json --expect-profile-id security-baseline
 ```
 
 Use `--root <path>` to run against another repository.

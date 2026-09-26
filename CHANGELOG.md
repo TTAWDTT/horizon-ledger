@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.30.0
+
+- Added `horizon workspace compliance export`, `inspect`, and `verify`.
+- Added JSON/YAML compliance profiles with deterministic control evaluation and hash-bound in-toto reports.
+- Added read-only `horizon_workspace_compliance_export`, `horizon_workspace_compliance_inspect`, and `horizon_workspace_compliance_verify` MCP tools.
+
 ## 0.29.0
 
 - Added a reusable Horizon Release Audit GitHub Action.

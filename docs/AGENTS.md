@@ -52,6 +52,9 @@ The server is read-only by default. Add `--write` only when you want the agent t
 - `horizon_workspace_release_export` — export decisions, gate report, and commit trace as one release audit
 - `horizon_workspace_release_inspect` — validate and summarize a raw release audit
 - `horizon_workspace_release_verify` — verify a release audit and its embedded artifact expectations
+- `horizon_workspace_compliance_export` — evaluate a raw control profile and export a hash-bound report
+- `horizon_workspace_compliance_inspect` — validate and summarize a compliance report
+- `horizon_workspace_compliance_verify` — verify a compliance report and control-count expectations
 - `horizon_context` — optionally pack context within a token budget
 - `horizon_trace` — trace commits to decisions by evidence, scope, or message reference
 - `horizon_workspace_trace` — trace workspace commits with root provenance

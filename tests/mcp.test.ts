@@ -34,6 +34,9 @@ describe('MCP server', () => {
     expect(names).toContain('horizon_workspace_release_export');
     expect(names).toContain('horizon_workspace_release_inspect');
     expect(names).toContain('horizon_workspace_release_verify');
+    expect(names).toContain('horizon_workspace_compliance_export');
+    expect(names).toContain('horizon_workspace_compliance_inspect');
+    expect(names).toContain('horizon_workspace_compliance_verify');
     expect(names).not.toContain('horizon_create');
     await readonly.close();
   });

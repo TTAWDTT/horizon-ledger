@@ -69,6 +69,12 @@ import {
   parseWorkspaceReleaseAudit,
   verifyWorkspaceReleaseAudit,
   workspaceReleaseAuditMarkdown,
+  exportWorkspaceCompliance,
+  inspectWorkspaceCompliance,
+  parseComplianceProfileFile,
+  parseWorkspaceCompliance,
+  verifyWorkspaceCompliance,
+  workspaceComplianceMarkdown,
 } from '../core';
 import { HORIZON_VERSION } from '../version';
 import { initLedger } from '../core/ledger';
@@ -1139,6 +1145,102 @@ workspaceRelease
       });
       const payload = options.format === 'markdown'
         ? workspaceReleaseAuditMarkdown(parseWorkspaceReleaseAudit(raw))
+        : JSON.stringify(verification, null, 2);
+      console.log(payload);
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  });
+
+const workspaceCompliance = workspace
+  .command('compliance')
+  .description('Evaluate and verify workspace control compliance profiles');
+
+workspaceCompliance
+  .command('export <profile>')
+  .description('Evaluate a JSON or YAML compliance profile and export a hash-bound report')
+  .option('-o, --out <path>', 'write to a file instead of stdout')
+  .option('-f, --format <format>', 'json | markdown', 'json')
+  .option('-r, --root <path>', 'workspace root', '.')
+  .action(async (profilePath: string, options: { out?: string; format?: string; root?: string }) => {
+    const root = path.resolve(options.root ?? '.');
+    try {
+      const fs = await import('node:fs/promises');
+      const profile = parseComplianceProfileFile(await fs.readFile(profilePath, 'utf8'), profilePath);
+      const report = await exportWorkspaceCompliance(root, profile);
+      const payload = options.format === 'markdown'
+        ? workspaceComplianceMarkdown(report)
+        : JSON.stringify(report, null, 2);
+      if (options.out) {
+        await fs.writeFile(options.out, payload, 'utf8');
+        console.log(`Compliance report ${report.reportId} -> ${options.out}`);
+      } else {
+        console.log(payload);
+      }
+      if (report.summary.failing > 0) process.exitCode = 1;
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  });
+
+workspaceCompliance
+  .command('inspect <report>')
+  .description('Validate and summarize a compliance report without writing files')
+  .option('-f, --format <format>', 'json | markdown', 'json')
+  .action(async (file: string, options: { format?: string }) => {
+    try {
+      const fs = await import('node:fs/promises');
+      const raw = await fs.readFile(file, 'utf8');
+      const parsed = parseWorkspaceCompliance(raw);
+      console.log(options.format === 'markdown'
+        ? workspaceComplianceMarkdown(parsed)
+        : JSON.stringify(inspectWorkspaceCompliance(raw), null, 2));
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  });
+
+workspaceCompliance
+  .command('verify <report>')
+  .description('Verify a compliance report and optional embedded artifact expectations')
+  .option('--expect-report-id <id>', 'required compliance report id')
+  .option('--expect-pack-id <id>', 'required embedded workspace pack id')
+  .option('--expect-profile-id <id>', 'required compliance profile id')
+  .option('--expect-profile-digest <digest>', 'required embedded profile digest')
+  .option('--expect-framework <framework>', 'required framework')
+  .option('--expect-controls <count>', 'required control count')
+  .option('--expect-passing <count>', 'required passing control count')
+  .option('--expect-failing <count>', 'required failing control count')
+  .option('-f, --format <format>', 'json | markdown', 'json')
+  .action(async (file: string, options: {
+    expectReportId?: string;
+    expectPackId?: string;
+    expectProfileId?: string;
+    expectProfileDigest?: string;
+    expectFramework?: string;
+    expectControls?: string;
+    expectPassing?: string;
+    expectFailing?: string;
+    format?: string;
+  }) => {
+    try {
+      const fs = await import('node:fs/promises');
+      const raw = await fs.readFile(file, 'utf8');
+      const verification = verifyWorkspaceCompliance(raw, {
+        reportId: options.expectReportId,
+        packId: options.expectPackId,
+        profileId: options.expectProfileId,
+        profileDigest: options.expectProfileDigest,
+        framework: options.expectFramework,
+        controls: options.expectControls ? Number(options.expectControls) : undefined,
+        passing: options.expectPassing ? Number(options.expectPassing) : undefined,
+        failing: options.expectFailing ? Number(options.expectFailing) : undefined,
+      });
+      const payload = options.format === 'markdown'
+        ? workspaceComplianceMarkdown(parseWorkspaceCompliance(raw))
         : JSON.stringify(verification, null, 2);
       console.log(payload);
     } catch (error) {
