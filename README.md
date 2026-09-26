@@ -67,6 +67,7 @@ horizon web
 horizon workspace init
 horizon workspace add ../another-repo --name another-repo
 horizon workspace list
+horizon workspace get D-0001
 horizon workspace validate
 horizon workspace audit
 horizon workspace pr-context --base main --head HEAD

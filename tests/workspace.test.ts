@@ -9,6 +9,7 @@ import {
   buildWorkspacePullRequestContext,
   createDecision,
   exportWorkspace,
+  getWorkspaceDecision,
   initLedger,
   initWorkspace,
   readWorkspace,
@@ -66,6 +67,8 @@ describe('horizon workspace', () => {
     expect(summary.roots.find((root) => root.name === 'first')?.decisions).toBe(1);
 
     const context = await buildWorkspaceContext(workspaceRoot, 'SQLite evidence');
+    const found = await getWorkspaceDecision(workspaceRoot, 'D-0001');
+    expect(found?.rootName).toBe('first');
     expect(context.decisions.map((hit) => hit.decision.id)).toContain('D-0001');
     expect(context.decisions.every((hit) => hit.rootName.length > 0)).toBe(true);
     expect(workspaceContextMarkdown(context)).toContain('[first] D-0001');

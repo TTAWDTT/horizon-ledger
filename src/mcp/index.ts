@@ -13,6 +13,7 @@ import {
   buildContextBundle,
   decisionsForFile,
   auditWorkspace,
+  getWorkspaceDecision,
   buildWorkspaceContext,
   readWorkspace,
   readWorkspaceLedger,
@@ -151,6 +152,19 @@ export function createMcpServer(rootArg?: string, options: McpServerOptions = {}
     }
   });
 
+  server.registerTool('horizon_workspace_get', {
+    description: 'Get a workspace decision with root provenance by id',
+    inputSchema: { id: z.string().describe('Decision id') },
+    annotations: { readOnlyHint: true },
+  }, async ({ id }: { id: string }) => {
+    try {
+      const found = await getWorkspaceDecision(root, id);
+      if (!found) return notFound(id);
+      return jsonResult(found);
+    } catch {
+      return workspaceNotFound(root);
+    }
+  });
   server.registerTool('horizon_workspace_validate', {
     description: 'Validate all enabled workspace roots as one decision graph',
     inputSchema: {},

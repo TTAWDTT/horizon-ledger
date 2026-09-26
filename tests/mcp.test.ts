@@ -64,6 +64,11 @@ describe('MCP server', () => {
         name: 'horizon_workspace_context',
         arguments: { query: 'SQLite' },
       }));
+      const found = parseResult(await client.callTool({
+        name: 'horizon_workspace_get',
+        arguments: { id: created.id },
+      }));
+      expect(found.rootId).toBe('r-001');
       expect(context.decisions[0].decision.id).toBe(created.id);
 
       const audit = parseResult(await client.callTool({ name: 'horizon_workspace_audit', arguments: {} }));

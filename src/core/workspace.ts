@@ -269,6 +269,16 @@ function workspaceRootSummaries(
   }));
 }
 
+export async function getWorkspaceDecision(
+  root: string,
+  id: string,
+  config?: WorkspaceConfig,
+): Promise<WorkspaceDecision | undefined> {
+  const workspace = config ?? await readWorkspace(root);
+  if (!workspace) throw new Error(`No Horizon workspace found at ${path.resolve(root)}`);
+  const entries = await readWorkspaceLedger(root, workspace);
+  return entries.find((entry) => entry.decision.id === id);
+}
 export function searchWorkspaceLedger(
   entries: WorkspaceDecision[],
   query: string,

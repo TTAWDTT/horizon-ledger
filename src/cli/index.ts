@@ -25,6 +25,7 @@ import {
   auditWorkspace,
   buildWorkspaceContext,
   buildWorkspacePullRequestContext,
+  getWorkspaceDecision,
   exportWorkspace,
   initWorkspace,
   readWorkspace,
@@ -469,6 +470,25 @@ workspace
     }
   });
 
+workspace
+  .command('get <id>')
+  .description('Get one workspace decision with root provenance')
+  .option('-r, --root <path>', 'workspace root', '.')
+  .action(async (id: string, options: { root?: string }) => {
+    const root = path.resolve(options.root ?? '.');
+    try {
+      const found = await getWorkspaceDecision(root, id);
+      if (!found) {
+        console.error(`Decision not found: ${id}`);
+        process.exitCode = 1;
+        return;
+      }
+      console.log(JSON.stringify(found, null, 2));
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  });
 workspace
   .command('list')
   .description('Show workspace roots and decision counts')
