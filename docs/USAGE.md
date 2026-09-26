@@ -13,6 +13,7 @@ horizon why sqlite
 horizon why src/core/storage.ts
 horizon score
 horizon validate
+horizon conflicts
 horizon graph
 horizon export --format markdown --out DECISIONS.md
 horizon doctor

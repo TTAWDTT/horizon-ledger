@@ -8,6 +8,7 @@ import {
   addEvidence,
   addLink,
   validateLedger,
+  findConflicts,
   searchLedger,
   buildGraph,
   scoreDecision,
@@ -24,7 +25,7 @@ const program = new Command();
 program
   .name('horizon')
   .description('Local-first decision ledger for humans and AI agents.')
-  .version('0.4.0');
+  .version('0.5.0');
 
 program
   .command('init')
@@ -296,6 +297,24 @@ program
     }
     const shouldFail = diagnostics.some((d) => d.level === 'error') || (options.strict && diagnostics.length > 0);
     if (shouldFail) process.exitCode = 1;
+  });
+
+program
+  .command('conflicts')
+  .description('Detect contradictory or incomplete decision relationships')
+  .option('-r, --root <path>', 'project root', '.')
+  .action(async (options) => {
+    const root = path.resolve(options.root ?? '.');
+    const ledger = await readLedger(root);
+    const conflicts = findConflicts(ledger);
+    if (!conflicts.length) {
+      console.log('OK: no conflicts');
+      return;
+    }
+    for (const conflict of conflicts) {
+      console.log(`${conflict.level.toUpperCase()}\t${conflict.kind}\t${conflict.id ?? "-"}${conflict.related.length ? " -> " + conflict.related.join(",") : ""}\t${conflict.message}`);
+    }
+    if (conflicts.some((item) => item.level === 'error')) process.exitCode = 1;
   });
 
 program

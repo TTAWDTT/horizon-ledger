@@ -102,7 +102,7 @@ Read-only is the default. To allow decision capture, use `horizon mcp --write`.
 - MCP server for coding agents (started)
 - local web dashboard (shipped)
 - GitHub Action validation (shipped)
-- evidence scoring and conflict detection
+- conflict detection (started)
 - sync protocol and team mode
 
 ## Why open source

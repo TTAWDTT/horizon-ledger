@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0
+
+- Added deterministic conflict detection for accepted and rejected alternatives in overlapping scopes.
+- Added incomplete supersession diagnostics.
+- Added `horizon conflicts` CLI and `horizon_conflicts` MCP read tool.
+
 ## 0.4.0
 
 - Added opt-in MCP write tools for decision capture and updates.

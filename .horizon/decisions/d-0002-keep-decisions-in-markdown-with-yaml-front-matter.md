@@ -11,9 +11,7 @@ scope:
   - src/core
 tags:
   - format
-links:
-  - id: D-0001
-    type: supersedes
+links: []
 alternatives:
   - id: A-001
     name: JSON-only decision store

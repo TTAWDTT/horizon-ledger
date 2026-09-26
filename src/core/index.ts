@@ -5,6 +5,7 @@ export * from './search';
 export * from './graph';
 export * from './score';
 export * from './validate';
+export * from './conflicts';
 export * from './utils';
 export * from './relevance';
 export * from './export';

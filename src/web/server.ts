@@ -1,5 +1,5 @@
 import http from 'node:http';
-import { readLedger, searchLedger, buildGraph, scoreDecision, validateLedger, type Decision, type ScoreResult } from '../core';
+import { readLedger, searchLedger, buildGraph, scoreDecision, validateLedger, findConflicts, type Decision, type ScoreResult } from '../core';
 
 interface LedgerStats {
   total: number;
@@ -39,6 +39,7 @@ export function createLedgerServer(root: string): http.Server {
         })),
         scores: Object.fromEntries(scores),
         graph,
+        conflicts: findConflicts(ledger),
         diagnostics,
         stats: buildStats(ledger, scores, diagnostics),
       });

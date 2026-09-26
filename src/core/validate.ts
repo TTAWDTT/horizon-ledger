@@ -1,9 +1,13 @@
 import type { Decision } from './types';
+import { findConflicts, type ConflictDiagnostic } from './conflicts';
 
 export interface Diagnostic {
   level: 'error' | 'warn';
   id?: string;
   message: string;
+  kind?: string;
+  related?: string[];
+  subject?: string;
 }
 
 export function validateLedger(ledger: Decision[]): Diagnostic[] {
@@ -17,5 +21,8 @@ export function validateLedger(ledger: Decision[]): Diagnostic[] {
     if ((d.alternatives ?? []).length === 0) diagnostics.push({ level: 'warn', id: d.id, message: 'missing alternatives' });
     if ((d.evidence ?? []).length === 0) diagnostics.push({ level: 'warn', id: d.id, message: 'missing evidence' });
   }
-  return diagnostics;
+  return [...diagnostics, ...findConflicts(ledger)];
 }
+
+export { findConflicts };
+export type { ConflictDiagnostic };
