@@ -1,12 +1,21 @@
 # Changelog
 
+## Unreleased
+
+- Added strict workspace config validation for duplicate IDs, duplicate names, duplicate resolved paths, unsafe metadata paths, and invalid enabled values.
+- Added `horizon workspace remove`, `enable`, and `disable` for explicit local root management.
+- Added structured `WorkspaceConfigError` diagnostics and protected existing configs from accidental regeneration.
+
 ## 0.10.0
 
 - Added Horizon workspaces for aggregating multiple local decision roots.
 - Added `horizon workspace init`, `add`, `get`, `list`, `validate`, and `context`.
 - Added workspace diagnostics for duplicate IDs, missing roots, and cross-root conflicts.
 - Added deterministic cross-repository agent context with root provenance.
-- Added cross-root evidence auditing with `horizon workspace audit` and `horizon_workspace_audit` MCP.`n- Added monorepo-aware `horizon workspace pr-context` for changed files across roots.`n- Added `horizon workspace export` for provenance-aware Markdown and JSON reports.`n- Added read-only `horizon_workspace_list`, `horizon_workspace_audit`, `horizon_workspace_context`, and `horizon_workspace_validate` MCP tools.
+- Added cross-root evidence auditing with `horizon workspace audit` and `horizon_workspace_audit` MCP.
+- Added monorepo-aware `horizon workspace pr-context` for changed files across roots.
+- Added `horizon workspace export` for provenance-aware Markdown and JSON reports.
+- Added read-only `horizon_workspace_list`, `horizon_workspace_audit`, `horizon_workspace_context`, and `horizon_workspace_validate` MCP tools.
 
 ## 0.9.0
 

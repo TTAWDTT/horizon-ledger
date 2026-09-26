@@ -3,6 +3,11 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {
+  disableWorkspaceRoot,
+  enableWorkspaceRoot,
+  removeWorkspaceRoot,
+  workspaceConfigPath,
+  WorkspaceConfigError,
   addWorkspaceRoot,
   auditWorkspace,
   buildWorkspaceContext,
@@ -184,8 +189,52 @@ describe('horizon workspace', () => {
     expect(validation.ok).toBe(false);
     expect(validation.diagnostics.some((diagnostic) => diagnostic.message.includes('cannot be read'))).toBe(true);
   });
+  it('rejects invalid workspace configs instead of silently treating them as missing', async () => {
+    const root = await makeRoot();
+    await fs.mkdir(path.join(root, '.horizon'), { recursive: true });
+    await fs.writeFile(workspaceConfigPath(root), JSON.stringify({
+      version: 1,
+      name: 'Broken',
+      roots: [
+        { id: 'r-001', name: 'same', path: '.', enabled: 'yes' },
+        { id: 'r-001', name: 'same', path: '../outside', enabled: true },
+      ],
+    }), 'utf8');
+
+    try {
+      await readWorkspace(root);
+      throw new Error('Expected WorkspaceConfigError');
+    } catch (error) {
+      expect(error).toBeInstanceOf(WorkspaceConfigError);
+      if (error instanceof WorkspaceConfigError) {
+        expect(error.issues.some((issue) => issue.message.includes('Duplicate root id'))).toBe(true);
+        expect(error.issues.some((issue) => issue.message.includes('Duplicate root name'))).toBe(true);
+        expect(error.issues.some((issue) => issue.path.endsWith('.enabled'))).toBe(true);
+      }
+    }
+  });
+
+  it('removes, enables, and disables workspace roots', async () => {
+    const first = await makeRoot();
+    const second = await makeRoot();
+    const root = await makeRoot();
+    await initLedger(first);
+    await initLedger(second);
+    await initLedger(root);
+    await initWorkspace(root);
+    await addWorkspaceRoot(root, first, 'first');
+    await addWorkspaceRoot(root, second, 'second');
+
+    const disabled = await disableWorkspaceRoot(root, 'first');
+    expect(disabled.roots.find((item) => item.name === 'first')?.enabled).toBe(false);
+
+    const enabled = await enableWorkspaceRoot(root, 'first');
+    expect(enabled.roots.find((item) => item.name === 'first')?.enabled).toBe(true);
+
+    const removed = await removeWorkspaceRoot(root, 'first');
+    expect(removed.name).toBe('first');
+    const config = await readWorkspace(root);
+    expect(config?.roots.map((item) => item.name)).not.toContain('first');
+    expect(config?.roots).toHaveLength(2);
+  });
 });
-
-
-
-

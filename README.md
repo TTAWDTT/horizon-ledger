@@ -68,6 +68,9 @@ horizon web
 horizon workspace init
 horizon workspace add ../another-repo --name another-repo
 horizon workspace list
+horizon workspace disable ../another-repo
+horizon workspace enable ../another-repo
+horizon workspace remove ../another-repo
 horizon workspace get D-0001
 horizon workspace validate
 horizon workspace audit
@@ -76,7 +79,7 @@ horizon workspace export --format markdown --out WORKSPACE.md
 horizon workspace context storage
 ```
 
-The MCP server also exposes read-only `horizon_workspace_list`, `horizon_workspace_audit`, `horizon_workspace_context`, and `horizon_workspace_validate` tools, so coding agents can query cross-root decisions without a cloud service.
+The MCP server also exposes read-only `horizon_workspace_list`, `horizon_workspace_audit`, `horizon_workspace_context`, and `horizon_workspace_validate` tools, so coding agents can query cross-root decisions without a cloud service. Workspace configs are validated strictly: duplicate IDs, names, and aliases fail fast instead of silently degrading into a partial graph.
 
 To run a local decision dashboard:
 

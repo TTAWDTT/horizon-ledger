@@ -26,6 +26,9 @@ horizon mcp
 horizon workspace init
 horizon workspace add ../another-repo --name another-repo
 horizon workspace list
+horizon workspace disable ../another-repo
+horizon workspace enable ../another-repo
+horizon workspace remove ../another-repo
 horizon workspace get D-0001
 horizon workspace validate
 horizon workspace audit
@@ -79,7 +82,7 @@ A workspace aggregates decisions from several Horizon roots without copying or c
 }
 ```
 
-Use it when a decision spans a monorepo package, service, client, or infrastructure repository. `workspace export` creates a portable review or audit report with root provenance and evidence findings. `workspace context` preserves the root name and path as provenance, while `workspace validate` checks every enabled root as one graph. Duplicate decision IDs, contradictory alternatives, dangling relationships, unreadable roots, and missing local evidence are reported together. `workspace audit` resolves local paths and Git commits inside each root instead of using the workspace root as a blanket target.
+Use it when a decision spans a monorepo package, service, client, or infrastructure repository. `workspace export` creates a portable review or audit report with root provenance and evidence findings. `workspace context` preserves the root name and path as provenance, while `workspace validate` checks every enabled root as one graph. Duplicate decision IDs, contradictory alternatives, dangling relationships, unreadable roots, and missing local evidence are reported together. Workspace config itself is also validated for duplicate IDs, duplicate names, duplicate resolved paths, unsafe metadata paths, and invalid enabled values; read or write commands fail with structured diagnostics instead of treating corruption as an absent workspace. `workspace audit` resolves local paths and Git commits inside each root instead of using the workspace root as a blanket target.
 
 ### Workspace PR action
 

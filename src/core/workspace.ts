@@ -23,6 +23,21 @@ export interface WorkspaceConfig {
   roots: WorkspaceRootConfig[];
 }
 
+export interface WorkspaceConfigIssue {
+  path: string;
+  message: string;
+}
+
+export class WorkspaceConfigError extends Error {
+  readonly issues: WorkspaceConfigIssue[];
+
+  constructor(issues: WorkspaceConfigIssue[], message = 'Invalid Horizon workspace configuration') {
+    super([message, ...issues.map((issue) => `- ${issue.path}: ${issue.message}`)].join('\n'));
+    this.name = 'WorkspaceConfigError';
+    this.issues = issues;
+  }
+}
+
 export interface WorkspaceDecision {
   rootId: string;
   rootName: string;
@@ -145,20 +160,127 @@ export function workspaceConfigPath(root: string): string {
   return path.join(path.resolve(root), '.horizon', 'workspace.json');
 }
 
+export function parseWorkspaceConfig(raw: string, workspaceRoot?: string): WorkspaceConfig {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (error) {
+    throw new WorkspaceConfigError([{ path: '$', message: `Invalid JSON: ${(error as Error).message}` }]);
+  }
+  return validateWorkspaceConfig(parsed, workspaceRoot);
+}
+
+export function validateWorkspaceConfig(value: unknown, workspaceRoot?: string): WorkspaceConfig {
+  const issues: WorkspaceConfigIssue[] = [];
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new WorkspaceConfigError([{ path: '$', message: 'Expected a workspace object' }]);
+  }
+  const candidate = value as Record<string, unknown>;
+  if (candidate.version !== 1) {
+    issues.push({ path: '$.version', message: 'Expected version 1' });
+  }
+  if (typeof candidate.name !== 'string' || !candidate.name.trim()) {
+    issues.push({ path: '$.name', message: 'Expected a non-empty workspace name' });
+  }
+  if (!Array.isArray(candidate.roots)) {
+    issues.push({ path: '$.roots', message: 'Expected an array of roots' });
+  }
+  if (issues.length) throw new WorkspaceConfigError(issues);
+
+  const config: WorkspaceConfig = {
+    version: 1,
+    name: (candidate.name as string).trim(),
+    roots: [],
+  };
+  const ids = new Map<string, number>();
+  const names = new Map<string, number>();
+  const paths = new Map<string, number>();
+
+  (candidate.roots as unknown[]).forEach((item, index) => {
+    const prefix = `$.roots[${index}]`;
+    if (typeof item !== 'object' || item === null || Array.isArray(item)) {
+      issues.push({ path: prefix, message: 'Expected a workspace root object' });
+      return;
+    }
+    const root = item as Record<string, unknown>;
+
+    if (typeof root.id !== 'string' || !/^r-0*[1-9][0-9]*$/u.test(root.id)) {
+      issues.push({ path: `${prefix}.id`, message: 'Expected an id like r-001' });
+    } else {
+      const existing = ids.get(root.id);
+      if (existing !== undefined) {
+        issues.push({ path: `${prefix}.id`, message: `Duplicate root id: ${root.id}` });
+      } else {
+        ids.set(root.id, index);
+      }
+    }
+
+    if (typeof root.name !== 'string' || !root.name.trim()) {
+      issues.push({ path: `${prefix}.name`, message: 'Expected a non-empty root name' });
+    } else {
+      const name = root.name.trim();
+      const existing = names.get(name.toLowerCase());
+      if (existing !== undefined) {
+        issues.push({ path: `${prefix}.name`, message: `Duplicate root name: ${name}` });
+      } else {
+        names.set(name.toLowerCase(), index);
+      }
+    }
+
+    if (typeof root.path !== 'string' || !root.path.trim()) {
+      issues.push({ path: `${prefix}.path`, message: 'Expected a non-empty root path' });
+      return;
+    }
+    const rootPath = root.path.trim().replace(/\\/g, '/').replace(/\/+$/, '') || '.';
+    if (rootPath.includes('\0')) {
+      issues.push({ path: `${prefix}.path`, message: 'Root path cannot contain NUL characters' });
+    }
+    if (path.isAbsolute(rootPath)) {
+      issues.push({ path: `${prefix}.path`, message: 'Use a path relative to the workspace' });
+    }
+    if (rootPath.split('/').includes('.horizon')) {
+      issues.push({ path: `${prefix}.path`, message: 'Root path must be a ledger root, not a .horizon directory' });
+    }
+
+    const resolvedPath = path.resolve(workspaceRoot ?? process.cwd(), rootPath);
+    const existing = paths.get(resolvedPath);
+    if (existing !== undefined) {
+      issues.push({ path: `${prefix}.path`, message: `Duplicate resolved root path: ${rootPath}` });
+    } else {
+      paths.set(resolvedPath, index);
+    }
+
+    if (root.enabled !== undefined && typeof root.enabled !== 'boolean') {
+      issues.push({ path: `${prefix}.enabled`, message: 'Expected enabled to be a boolean' });
+    }
+
+    if (!issues.some((issue) => issue.path.startsWith(prefix))) {
+      config.roots.push({
+        id: root.id as string,
+        name: (root.name as string).trim(),
+        path: rootPath,
+        enabled: root.enabled as boolean | undefined,
+      });
+    }
+  });
+
+  if (issues.length) throw new WorkspaceConfigError(issues);
+  return config;
+}
+
 export async function readWorkspace(root: string): Promise<WorkspaceConfig | undefined> {
   try {
     const raw = await fs.readFile(workspaceConfigPath(root), 'utf8');
-    const parsed = JSON.parse(raw) as WorkspaceConfig;
-    if (parsed.version !== 1 || typeof parsed.name !== 'string' || !Array.isArray(parsed.roots)) {
-      return undefined;
-    }
-    return parsed;
-  } catch {
-    return undefined;
+    return parseWorkspaceConfig(raw, root);
+  } catch (error) {
+    if (error instanceof WorkspaceConfigError) throw error;
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
+    throw error;
   }
 }
 
 export async function writeWorkspace(root: string, config: WorkspaceConfig): Promise<void> {
+  validateWorkspaceConfig(config, root);
   await fs.mkdir(path.join(path.resolve(root), '.horizon'), { recursive: true });
   await fs.writeFile(workspaceConfigPath(root), `${JSON.stringify(config, null, 2)}\n`, 'utf8');
 }
@@ -209,7 +331,7 @@ export async function addWorkspaceRoot(
 
   const rootName = name ?? path.basename(resolvedTarget);
   if (!rootName.trim()) throw new Error('Workspace root name cannot be empty.');
-  if (config.roots.some((root) => root.name === rootName)) {
+  if (config.roots.some((root) => root.name.trim().toLowerCase() === rootName.trim().toLowerCase())) {
     throw new Error(`Workspace root name already exists: ${rootName}`);
   }
 
@@ -227,6 +349,62 @@ export async function addWorkspaceRoot(
   });
   await writeWorkspace(workspaceRoot, config);
   return config;
+}
+
+function findWorkspaceRootIndex(
+  workspaceRoot: string,
+  config: WorkspaceConfig,
+  identifier: string,
+): number {
+  const value = identifier.trim();
+  if (!value) throw new Error('Workspace root identifier cannot be empty.');
+  const byId = config.roots.findIndex((root) => root.id === value);
+  if (byId !== -1) return byId;
+  const byName = config.roots.findIndex((root) => root.name.trim().toLowerCase() === value.toLowerCase());
+  if (byName !== -1) return byName;
+  const target = path.resolve(workspaceRoot, value);
+  const byPath = config.roots.findIndex((root) => path.resolve(workspaceRoot, root.path) === target);
+  if (byPath !== -1) return byPath;
+  throw new Error(`Workspace root not found: ${identifier}`);
+}
+
+export async function removeWorkspaceRoot(
+  workspaceRoot: string,
+  identifier: string,
+): Promise<WorkspaceRootConfig> {
+  const config = await readWorkspace(workspaceRoot);
+  if (!config) throw new Error(`No Horizon workspace found at ${path.resolve(workspaceRoot)}`);
+  const index = findWorkspaceRootIndex(workspaceRoot, config, identifier);
+  const [removed] = config.roots.splice(index, 1);
+  await writeWorkspace(workspaceRoot, config);
+  return removed;
+}
+
+export async function setWorkspaceRootEnabled(
+  workspaceRoot: string,
+  identifier: string,
+  enabled: boolean,
+): Promise<WorkspaceConfig> {
+  const config = await readWorkspace(workspaceRoot);
+  if (!config) throw new Error(`No Horizon workspace found at ${path.resolve(workspaceRoot)}`);
+  const index = findWorkspaceRootIndex(workspaceRoot, config, identifier);
+  config.roots[index].enabled = enabled;
+  await writeWorkspace(workspaceRoot, config);
+  return config;
+}
+
+export function enableWorkspaceRoot(
+  workspaceRoot: string,
+  identifier: string,
+): Promise<WorkspaceConfig> {
+  return setWorkspaceRootEnabled(workspaceRoot, identifier, true);
+}
+
+export function disableWorkspaceRoot(
+  workspaceRoot: string,
+  identifier: string,
+): Promise<WorkspaceConfig> {
+  return setWorkspaceRootEnabled(workspaceRoot, identifier, false);
 }
 
 export async function readWorkspaceLedger(

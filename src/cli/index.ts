@@ -21,6 +21,9 @@ import {
   decisionsForFile,
   exportLedger,
   exportMarkdown,
+  disableWorkspaceRoot,
+  enableWorkspaceRoot,
+  removeWorkspaceRoot,
   addWorkspaceRoot,
   auditWorkspace,
   buildWorkspaceContext,
@@ -464,6 +467,53 @@ workspace
       const config = await addWorkspaceRoot(root, target, options.name);
       const added = config.roots.at(-1)!;
       console.log(`Added workspace root ${added.id}: ${added.name} (${added.path})`);
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  });
+
+workspace
+  .command('remove <root>')
+  .description('Remove a workspace root by id, name, or path')
+  .option('-r, --root <path>', 'workspace root', '.')
+  .action(async (target: string, options: { root?: string }) => {
+    const root = path.resolve(options.root ?? '.');
+    try {
+      const removed = await removeWorkspaceRoot(root, target);
+      console.log(`Removed workspace root ${removed.id}: ${removed.name}`);
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  });
+
+workspace
+  .command('enable <root>')
+  .description('Enable a workspace root by id, name, or path')
+  .option('-r, --root <path>', 'workspace root', '.')
+  .action(async (target: string, options: { root?: string }) => {
+    const root = path.resolve(options.root ?? '.');
+    try {
+      const config = await enableWorkspaceRoot(root, target);
+      const updated = config.roots.find((item) => item.id === target || item.name === target || item.path === target);
+      if (updated) console.log(`Enabled workspace root ${updated.id}: ${updated.name}`);
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  });
+
+workspace
+  .command('disable <root>')
+  .description('Disable a workspace root by id, name, or path')
+  .option('-r, --root <path>', 'workspace root', '.')
+  .action(async (target: string, options: { root?: string }) => {
+    const root = path.resolve(options.root ?? '.');
+    try {
+      const config = await disableWorkspaceRoot(root, target);
+      const updated = config.roots.find((item) => item.id === target || item.name === target || item.path === target);
+      if (updated) console.log(`Disabled workspace root ${updated.id}: ${updated.name}`);
     } catch (error) {
       console.error(error instanceof Error ? error.message : String(error));
       process.exitCode = 1;
