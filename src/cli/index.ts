@@ -27,10 +27,24 @@ program
   .command('init')
   .description('Initialize a new Horizon Ledger in the current directory.')
   .option('-r, --root <path>', 'project root', '.')
-  .action(async (options: { root?: string }) => {
+  .option('--mcp', 'also write a .mcp.json config for MCP clients')
+  .action(async (options: { root?: string; mcp?: boolean }) => {
     const root = path.resolve(options.root ?? '.');
     await initLedger(root);
-    console.log(`Initialized Horizon Ledger at ${root}`);
+    if (options.mcp) {
+      const config = {
+        mcpServers: {
+          'horizon-ledger': {
+            command: 'npx',
+            args: ['horizon-ledger', 'mcp', '--root', root],
+          },
+        },
+      };
+      const fs2 = await import('node:fs/promises');
+      await fs2.writeFile(path.join(root, '.mcp.json'), JSON.stringify(config, null, 2) + '\n', 'utf8');
+      console.log('Wrote .mcp.json');
+    }
+    console.log('Initialized Horizon Ledger at ' + root);
   });
 
 program

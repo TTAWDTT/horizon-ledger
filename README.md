@@ -37,8 +37,7 @@ npm install horizon-ledger
 ## Quickstart
 
 ```bash
-horizon init
-horizon add --title "Use SQLite for local storage" --summary "SQLite is simple and portable."
+horizon init --mcphorizon add --title "Use SQLite for local storage" --summary "SQLite is simple and portable."
 horizon list
 horizon show D-0001
 horizon update D-0001 --status decided
@@ -93,5 +92,6 @@ Horizon Ledger is open source under MIT. The project will be developed and itera
 ## Contributing
 
 Issues and pull requests are welcome. Please keep changes small and evidence-focused.
+
 
 
