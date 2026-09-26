@@ -181,7 +181,7 @@ Read-only is the default. To allow decision capture, use `horizon mcp --write`.
 - cross-root workspace commit traceability (shipped)
 - portable workspace packs and decision evidence packages (shipped)
 - self-contained in-toto release audits and CI release-audit artifacts (shipped)
-- local compliance-profile evaluation and hash-bound control reports (shipped)
+- local compliance-profile evaluation and CI compliance-report artifacts (shipped)
 
 ## Why open source
 
@@ -233,6 +233,16 @@ To retain decisions, the gate verdict, and commit attribution as one release art
   with:
     base-sha: ${{ github.event.pull_request.base.sha }}
     head-sha: ${{ github.event.pull_request.head.sha }}
+    root: .
+    artifact: true
+```
+
+To evaluate a compliance profile and retain the hash-bound report, add the compliance Action:
+
+```yaml
+- uses: TTAWDTT/horizon-ledger/.github/actions/compliance@main
+  with:
+    profile: compliance/profile.yaml
     root: .
     artifact: true
 ```

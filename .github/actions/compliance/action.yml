@@ -1,0 +1,102 @@
+name: 'Horizon Compliance Report'
+description: 'Evaluate a Horizon compliance profile and upload a hash-bound control report'
+branding:
+  icon: 'shield'
+  color: 'green'
+inputs:
+  profile:
+    description: 'Path to the Horizon compliance profile JSON or YAML'
+    required: true
+  root:
+    description: 'Workspace root containing .horizon/workspace.json'
+    required: false
+    default: '.'
+  artifact:
+    description: 'Upload the compliance report as a workflow artifact'
+    required: false
+    default: 'true'
+  artifact-name:
+    description: 'Name for the uploaded compliance report artifact'
+    required: false
+    default: 'horizon-compliance-report'
+  artifact-retention-days:
+    description: 'Retention days for the uploaded compliance report'
+    required: false
+    default: '365'
+outputs:
+  compliance-report:
+    description: 'Path to the generated JSON compliance report'
+    value: ${{ steps.horizon.outputs.compliance-report }}
+  report-id:
+    description: 'Canonical SHA-256 compliance report id'
+    value: ${{ steps.horizon.outputs.report-id }}
+  pack-id:
+    description: 'Canonical SHA-256 workspace pack id'
+    value: ${{ steps.horizon.outputs.pack-id }}
+  profile-id:
+    description: 'Compliance profile id'
+    value: ${{ steps.horizon.outputs.profile-id }}
+  passing-controls:
+    description: 'Number of passing controls'
+    value: ${{ steps.horizon.outputs.passing-controls }}
+  failing-controls:
+    description: 'Number of failing controls'
+    value: ${{ steps.horizon.outputs.failing-controls }}
+runs:
+  using: composite
+  steps:
+    - name: Set up Bun
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: latest
+    - name: Install Horizon Ledger
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: bun install --frozen-lockfile
+    - name: Export Horizon compliance report
+      id: horizon
+      shell: bash
+      env:
+        PROFILE: ${{ inputs.profile }}
+        ROOT: ${{ inputs.root }}
+        ACTION_PATH: ${{ github.action_path }}
+      run: |
+        set -uo pipefail
+        REPORT_OUT="${RUNNER_TEMP}/horizon-compliance-report.json"
+        bun run "$ACTION_PATH/../../../src/cli/index.ts" workspace compliance export \
+          "$PROFILE" \
+          --root "$ROOT" \
+          --out "$REPORT_OUT"
+        status=$?
+
+        summary="$(node -e "
+          const report = require(process.argv[1]);
+          console.log('# Horizon compliance report');
+          console.log('');
+          console.log('- Report id: \`' + report.reportId + '\`');
+          console.log('- Profile: ' + report.profile.name + ' (' + report.profile.id + ')');
+          console.log('- Framework: ' + report.profile.framework);
+          console.log('- Controls: ' + report.summary.passing + '/' + report.summary.controls + ' passing');
+          console.log('- Coverage: ' + report.summary.coverage + '%');
+        " "$REPORT_OUT")"
+        printf '%s\n' "$summary" >> "$GITHUB_STEP_SUMMARY"
+
+        values="$(node -e "
+          const report = require(process.argv[1]);
+          console.log('compliance-report=' + process.argv[1]);
+          console.log('report-id=' + report.reportId);
+          console.log('pack-id=' + report.statement.predicate.packId);
+          console.log('profile-id=' + report.profile.id);
+          console.log('passing-controls=' + report.summary.passing);
+          console.log('failing-controls=' + report.summary.failing);
+        " "$REPORT_OUT")"
+        echo "$values" >> "$GITHUB_OUTPUT"
+        exit $status
+    - name: Upload Horizon compliance report
+      if: ${{ always() && inputs.artifact == 'true' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ steps.horizon.outputs.compliance-report }}
+        if-no-files-found: ignore
+        retention-days: ${{ inputs.artifact-retention-days }}

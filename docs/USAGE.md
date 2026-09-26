@@ -118,6 +118,18 @@ Use it when a decision spans a monorepo package, service, client, or infrastruct
 
 The Action exposes `release-audit`, `release-audit-id`, `gate-verdict`, `trace-commits`, `attributed-commits`, and `unattributed-commits` outputs and uploads the JSON audit.
 
+### Compliance report action
+
+```yaml
+- uses: TTAWDTT/horizon-ledger/.github/actions/compliance@main
+  with:
+    profile: compliance/profile.yaml
+    root: .
+    artifact: true
+```
+
+The Action uploads the JSON report and exposes `report-id`, `profile-id`, `passing-controls`, and `failing-controls`. The step fails when a control fails, while the artifact upload still runs with `always()`.
+
 ### Workspace PR action
 
 ```yaml

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.31.0
+
+- Added a reusable Horizon Compliance Report GitHub Action.
+- Compliance CI runs expose report, pack, profile, and control-count outputs and retain failed reports.
+
 ## 0.30.0
 
 - Added `horizon workspace compliance export`, `inspect`, and `verify`.

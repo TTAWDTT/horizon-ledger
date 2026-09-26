@@ -72,3 +72,15 @@ Verification re-parses the pack, validates both embedded digests, re-evaluates e
 ## Enterprise packs
 
 The local engine is open source. Framework-specific control mappings, review playbooks, and organization-specific policy packs can be sold separately because they contain curated content rather than core capability. The report remains importable and exportable, so a paid pack must never hold the ledger hostage.
+
+## CI
+
+```yaml
+- uses: TTAWDTT/horizon-ledger/.github/actions/compliance@main
+  with:
+    profile: compliance/profile.yaml
+    root: .
+    artifact: true
+```
+
+The Action uploads the JSON report, exposes `report-id`, `profile-id`, `passing-controls`, and `failing-controls`, and fails when any control fails. Artifact upload still runs on failure so the failed evidence can be retained.

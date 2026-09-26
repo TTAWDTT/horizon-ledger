@@ -8,6 +8,7 @@ const actionFiles = [
   '.github/actions/validate/action.yml',
   '.github/actions/evidence/action.yml',
   '.github/actions/release-audit/action.yml',
+  '.github/actions/compliance/action.yml',
 ];
 
 describe('composite actions', () => {
@@ -42,5 +43,15 @@ describe('composite actions', () => {
     expect(content).toContain('trace-commits');
     expect(content).toContain('attributed-commits');
     expect(content).toContain('unattributed-commits');
+    expect(content).toContain('actions/upload-artifact@v4');
+  });
+
+  it('supports compliance report artifact upload and control outputs', async () => {
+    const content = await fs.readFile(path.join(process.cwd(), '.github/actions/compliance/action.yml'), 'utf8');
+    expect(content).toContain('workspace compliance export');
+    expect(content).toContain('report-id');
+    expect(content).toContain('profile-id');
+    expect(content).toContain('passing-controls');
+    expect(content).toContain('failing-controls');
     expect(content).toContain('actions/upload-artifact@v4');
   });
