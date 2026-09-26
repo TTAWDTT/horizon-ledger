@@ -237,4 +237,11 @@ describe('horizon workspace', () => {
     expect(config?.roots.map((item) => item.name)).not.toContain('first');
     expect(config?.roots).toHaveLength(2);
   });
+  it('does not create a workspace when the target is not a ledger', async () => {
+    const root = await makeRoot();
+    const target = await makeRoot();
+
+    await expect(addWorkspaceRoot(root, target, 'not-a-ledger')).rejects.toThrow(/Not a Horizon ledger/);
+    await expect(readWorkspace(root)).resolves.toBeUndefined();
+  });
 });

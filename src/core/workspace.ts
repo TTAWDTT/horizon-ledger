@@ -320,7 +320,6 @@ export async function addWorkspaceRoot(
   target: string,
   name?: string,
 ): Promise<WorkspaceConfig> {
-  const config = await readWorkspace(workspaceRoot) ?? await initWorkspace(workspaceRoot);
   const resolvedTarget = path.resolve(workspaceRoot, target);
 
   try {
@@ -328,6 +327,8 @@ export async function addWorkspaceRoot(
   } catch {
     throw new Error(`Not a Horizon ledger: ${resolvedTarget}`);
   }
+
+  const config = await readWorkspace(workspaceRoot) ?? await initWorkspace(workspaceRoot);
 
   const rootName = name ?? path.basename(resolvedTarget);
   if (!rootName.trim()) throw new Error('Workspace root name cannot be empty.');
