@@ -3,11 +3,14 @@ id: D-0017
 title: Resolve workspace decisions by ID with provenance
 status: decided
 createdAt: 2026-09-26T12:33:27.520Z
-updatedAt: 2026-09-26T12:33:29.331Z
+updatedAt: 2026-09-26T12:39:03.370Z
 confidence: high
 horizon: medium
 kind: engineering
-scope: []
+scope:
+  - src/core/workspace.ts
+  - src/cli/index.ts
+  - src/mcp/index.ts
 tags: []
 owner: Codex
 links: []

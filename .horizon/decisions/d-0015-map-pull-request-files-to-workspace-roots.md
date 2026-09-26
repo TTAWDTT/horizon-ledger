@@ -3,11 +3,15 @@ id: D-0015
 title: Map pull request files to workspace roots
 status: decided
 createdAt: 2026-09-26T12:03:53.741Z
-updatedAt: 2026-09-26T12:24:24.466Z
+updatedAt: 2026-09-26T12:39:02.169Z
 confidence: high
 horizon: medium
 kind: engineering
-scope: []
+scope:
+  - src/core/workspace.ts
+  - src/cli/index.ts
+  - .github/actions/pr-context/action.yml
+  - .github/actions/validate/action.yml
 tags: []
 owner: Codex
 links: []

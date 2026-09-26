@@ -3,11 +3,13 @@ id: D-0016
 title: Export workspace decisions as audit reports
 status: decided
 createdAt: 2026-09-26T12:30:17.953Z
-updatedAt: 2026-09-26T12:30:19.148Z
+updatedAt: 2026-09-26T12:39:02.747Z
 confidence: high
 horizon: medium
 kind: engineering
-scope: []
+scope:
+  - src/core/workspace.ts
+  - src/cli/index.ts
 tags: []
 owner: Codex
 links: []
