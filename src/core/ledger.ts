@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { parseFrontMatter, encodeFrontMatter } from './frontmatter';
 import type { Alternative, Decision, DecisionLink, DecisionStatus, Evidence } from './types';
 import { slugify, nextId, newEvidenceId, newAlternativeId } from './utils';
@@ -163,6 +164,59 @@ export async function addEvidence(root: string, id: string, input: Omit<Evidence
   const content = encodeFrontMatter(toFront(updated), renderBody(updated));
   await fs.writeFile(file, content, 'utf8');
   return updated;
+}
+
+export interface SealEvidenceResult {
+  decisionId: string;
+  evidenceId: string;
+  value: string;
+  hash?: string;
+  changed: boolean;
+}
+
+export async function sealEvidence(
+  root: string,
+  decisionId: string,
+  evidenceId: string,
+  options: { force?: boolean } = {},
+): Promise<SealEvidenceResult | undefined> {
+  const all = await readLedger(root);
+  const found = all.find((decision) => decision.id === decisionId);
+  if (!found) return undefined;
+  const evidence = found.evidence?.find((item) => item.id === evidenceId);
+  if (!evidence) {
+    throw new Error(`Evidence not found: ${decisionId}/${evidenceId}`);
+  }
+  const value = evidence.value.trim();
+  if (/^https?:\/\//i.test(value)) {
+    throw new Error('URL evidence cannot be sealed locally');
+  }
+  if (evidence.type === 'commit') {
+    throw new Error('Commit evidence is already sealed by its Git object');
+  }
+  if (!['file', 'doc', 'test', 'benchmark'].includes(evidence.type)) {
+    throw new Error(`${evidence.type} evidence cannot be sealed`);
+  }
+  const filePath = path.isAbsolute(value) ? value : path.resolve(root, value);
+  const stat = await fs.stat(filePath);
+  if (!stat.isFile()) {
+    throw new Error(`Seal target is not a file: ${evidence.value}`);
+  }
+  const content = await fs.readFile(filePath);
+  const hash = createHash('sha256').update(content).digest('hex');
+  if (evidence.hash?.toLowerCase() === hash) {
+    return { decisionId: found.id, evidenceId: evidence.id, value: evidence.value, hash, changed: false };
+  }
+  if (evidence.hash && !options.force) {
+    throw new Error(`Evidence seal mismatch for ${evidence.value}; use --force to reseal`);
+  }
+  const nextEvidence = (found.evidence ?? []).map((item) =>
+    item.id === evidence.id ? { ...item, hash } : item,
+  );
+  const updated = { ...found, evidence: nextEvidence, updatedAt: new Date().toISOString() };
+  const file = await decisionFilePath(root, found.id);
+  await fs.writeFile(file, encodeFrontMatter(toFront(updated), renderBody(updated)), 'utf8');
+  return { decisionId: found.id, evidenceId: evidence.id, value: evidence.value, hash, changed: true };
 }
 
 async function decisionFilePath(root: string, id: string): Promise<string> {

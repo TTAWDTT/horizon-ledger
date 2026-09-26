@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.17.0
+
+- Added `requireEvidence: sealed` for hash-bound evidence gates.
+- Added `horizon seal` and the write-only `horizon_seal_evidence` MCP tool.
+- Added sealed-evidence counts and drift diagnostics.
+
 ## 0.16.1
 
 - Fixed composite Action source resolution for gate, validation, and PR context.

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { buildChangeGate, createDecision, initLedger, validateLedger } from '../src/core';
 
 import type { Decision } from '../src/core/types';
@@ -13,13 +14,18 @@ async function makeRoot(): Promise<string> {
 async function createRootWithDecision(options: {
   mode: 'observe' | 'review' | 'block';
   status: 'draft' | 'decided';
-  requireEvidence: 'any' | 'verified' | 'strong';
+  requireEvidence: 'any' | 'verified' | 'strong' | 'sealed';
+  seal?: boolean;
   strength?: 'strong' | 'moderate' | 'weak';
 }): Promise<string> {
   const root = await makeRoot();
   await initLedger(root);
   await fs.mkdir(path.join(root, 'src/core'), { recursive: true });
-  await fs.writeFile(path.join(root, 'src/core/index.ts'), 'export {};', 'utf8');
+  const target = path.join(root, 'src/core/index.ts');
+  await fs.writeFile(target, 'export {};', 'utf8');
+  const hash = options.seal
+    ? createHash('sha256').update(await fs.readFile(target)).digest('hex')
+    : undefined;
   await createDecision(root, {
     title: 'Use SQLite for local storage',
     summary: 'SQLite keeps local data portable.',
@@ -30,7 +36,7 @@ async function createRootWithDecision(options: {
     scope: ['src/core'],
     policy: { mode: options.mode, requireEvidence: options.requireEvidence },
     alternatives: [{ id: 'A-001', name: 'Postgres', verdict: 'rejected', reason: 'Too heavy locally.' }],
-    evidence: options.strength ? [{ id: 'E-001', type: 'file', value: 'src/core/index.ts', strength: options.strength }] : [],
+    evidence: options.strength ? [{ id: 'E-001', type: 'file', value: 'src/core/index.ts', strength: options.strength, hash }] : [],
   });
   return root;
 }
@@ -79,11 +85,37 @@ describe('change gate', () => {
     expect(diagnostics.some((item) => item.level === 'error' && item.message.includes('invalid policy evidence requirement'))).toBe(true);
   });
 
+  it('passes sealed file evidence', async () => {
+    const root = await createRootWithDecision({
+      mode: 'block',
+      status: 'decided',
+      requireEvidence: 'sealed',
+      strength: 'moderate',
+      seal: true,
+    });
+    const gate = await buildChangeGate(root, ['src/core/storage.ts']);
+    expect(gate.verdict).toBe('pass');
+    expect(gate.audit.sealed).toBe(1);
+  });
+
+  it('blocks sealed evidence when the target drifts', async () => {
+    const root = await createRootWithDecision({
+      mode: 'block',
+      status: 'decided',
+      requireEvidence: 'sealed',
+      strength: 'moderate',
+      seal: true,
+    });
+    await fs.appendFile(path.join(root, 'src/core/index.ts'), '// drifted');
+    const gate = await buildChangeGate(root, ['src/core/storage.ts']);
+    expect(gate.verdict).toBe('block');
+    expect(gate.violations.some((item) => item.message.includes('no sealed evidence'))).toBe(true);
+    expect(gate.audit.findings.some((item) => item.status === 'missing' && item.message.includes('sha256 mismatch'))).toBe(true);
+  });
+
   it('requires strong evidence when requested', async () => {
     const root = await createRootWithDecision({ mode: 'block', status: 'decided', requireEvidence: 'strong', strength: 'moderate' });
     const weak = await buildChangeGate(root, ['src/core/storage.ts']);
     expect(weak.verdict).toBe('block');
   });
 });
-
-

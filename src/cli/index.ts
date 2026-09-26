@@ -11,6 +11,7 @@ import {
   findConflicts,
   importAdrDirectory,
   auditLedger,
+  sealEvidence,
   buildContextBundle,
   contextBundleMarkdown,
   buildPullRequestGate,
@@ -106,7 +107,7 @@ program
   .option('--tag <tag>', 'tag (repeatable)', (v: string, prev: string[]) => [...(prev ?? []), v], [])
   .option('--scope <scope>', 'scope (repeatable)', (v: string, prev: string[]) => [...(prev ?? []), v], [])
   .option('--policy-mode <mode>', 'observe | review | block')
-  .option('--policy-evidence <level>', 'any | verified | strong')
+  .option('--policy-evidence <level>', 'any | verified | strong | sealed')
   .option('-r, --root <path>', 'project root', '.')
   .action(async (options) => {
     const root = path.resolve(options.root ?? '.');
@@ -164,7 +165,7 @@ program
   .option('--tag <tag>', 'tag (repeatable)', (v: string, prev: string[]) => [...(prev ?? []), v], [])
   .option('--scope <scope>', 'scope (repeatable)', (v: string, prev: string[]) => [...(prev ?? []), v], [])
   .option('--policy-mode <mode>', 'new policy mode: observe | review | block')
-  .option('--policy-evidence <level>', 'new policy evidence requirement: any | verified | strong')
+  .option('--policy-evidence <level>', 'new policy evidence requirement: any | verified | strong | sealed')
   .option('-r, --root <path>', 'project root', '.')
   .action(async (id: string, options) => {
     const root = path.resolve(options.root ?? '.');
@@ -490,6 +491,28 @@ program
     console.log(`Added evidence to ${updated.id}`);
   });
 
+
+program
+  .command('seal <decision> <evidence>')
+  .description('Bind local evidence to its current sha256 content')
+  .option('--force', 'replace an existing mismatched seal')
+  .option('-r, --root <path>', 'project root', '.')
+  .action(async (decisionId: string, evidenceId: string, options: { force?: boolean; root?: string }) => {
+    const root = path.resolve(options.root ?? '.');
+    try {
+      const result = await sealEvidence(root, decisionId, evidenceId, { force: options.force });
+      if (!result) {
+        console.error(`Decision not found: ${decisionId}`);
+        process.exitCode = 1;
+        return;
+      }
+      console.log(`${result.changed ? 'Sealed' : 'Already sealed'} ${result.decisionId}/${result.evidenceId}: ${result.value}`);
+      if (result.hash) console.log(result.hash);
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  });
 
 const workspace = program
   .command('workspace')

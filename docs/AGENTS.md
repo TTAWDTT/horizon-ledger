@@ -57,5 +57,6 @@ Enabled only with `horizon mcp --write` or `HORIZON_MCP_WRITE=1`.
 - `horizon_link` — relate, supersede, or express dependencies between decisions
 - `horizon_add_alternative` — record another considered option
 - `horizon_add_evidence` — attach commits, files, docs, tests, benchmarks, meetings, or sessions
+- `horizon_seal_evidence` — bind a local evidence file to its current sha256 content
 
 Workspace tools are read-only in every mode; decision writes remain scoped to a single root. This gives an agent the same decision context a human reviewer would use and keeps durable decisions in Git rather than an opaque memory store.

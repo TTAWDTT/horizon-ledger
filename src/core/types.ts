@@ -26,7 +26,7 @@ export interface Alternative {
 
 export interface DecisionPolicy {
   mode?: 'observe' | 'review' | 'block';
-  requireEvidence?: 'any' | 'verified' | 'strong';
+  requireEvidence?: 'any' | 'verified' | 'strong' | 'sealed';
 }
 
 export interface DecisionLink {

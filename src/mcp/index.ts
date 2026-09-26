@@ -24,6 +24,7 @@ import {
   planWorkspacePackImport,
   workspaceSummary,
   createDecision,
+  sealEvidence,
   updateDecision,
   addLink,
   addAlternative,
@@ -59,7 +60,7 @@ const relationSchema = z.enum(['supersedes', 'depends_on', 'related_to']);
 
 const policyInputSchema = z.object({
   mode: z.enum(['observe', 'review', 'block']).default('review').describe('Whether the gate records, warns, or blocks'),
-  requireEvidence: z.enum(['any', 'verified', 'strong']).default('verified').describe('Evidence quality required by the gate'),
+  requireEvidence: z.enum(['any', 'verified', 'strong', 'sealed']).default('verified').describe('Evidence quality required by the gate'),
 }).optional();
 
 function workspaceNotFound(root: string) {
@@ -93,7 +94,7 @@ export interface McpServerOptions {
 export function createMcpServer(rootArg?: string, options: McpServerOptions = {}): McpServer {
   const root = path.resolve(rootArg ?? process.env.HORIZON_ROOT ?? '.');
   const allowWrite = options.write ?? process.env.HORIZON_MCP_WRITE === '1';
-  const server = new McpServer({ name: 'horizon-ledger', version: '0.16.1' });
+  const server = new McpServer({ name: 'horizon-ledger', version: '0.17.0' });
 
   server.registerTool('horizon_list', {
     description: 'List all decisions in the current Horizon Ledger',
@@ -348,6 +349,27 @@ export function createMcpServer(rootArg?: string, options: McpServerOptions = {}
     if (!updated) return notFound(id);
     const ledger = await readLedger(root);
     return jsonResult(ledger.find((d) => d.id === id));
+  });
+
+  server.registerTool('horizon_seal_evidence', {
+    description: 'Bind local evidence to its current sha256 content',
+    inputSchema: {
+      decisionId: z.string().describe('Decision id'),
+      evidenceId: z.string().describe('Evidence id'),
+      force: z.boolean().default(false).optional().describe('Replace an existing mismatched seal'),
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false },
+  }, async ({ decisionId, evidenceId, force }: { decisionId: string; evidenceId: string; force?: boolean }) => {
+    try {
+      const result = await sealEvidence(root, decisionId, evidenceId, { force });
+      if (!result) return notFound(decisionId);
+      return jsonResult(result);
+    } catch (error) {
+      return {
+        content: [{ type: 'text' as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      };
+    }
   });
 
   server.registerTool('horizon_link', {

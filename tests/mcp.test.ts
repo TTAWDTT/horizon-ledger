@@ -140,11 +140,20 @@ describe('MCP server', () => {
       }));
       expect(alternative.alternatives.length).toBe(2);
 
+      await fs.mkdir(path.join(root, 'src', 'core'), { recursive: true });
+      await fs.writeFile(path.join(root, 'src', 'core', 'proof.md'), 'SQLite is local and portable.');
       const evidenced = parseResult(await client.callTool({
         name: 'horizon_add_evidence',
-        arguments: { id: created.id, type: 'file', value: 'src/core', strength: 'moderate', note: 'Implementation matches the decision.' },
+        arguments: { id: created.id, type: 'file', value: 'src/core/proof.md', strength: 'moderate', note: 'Implementation matches the decision.' },
       }));
       expect(evidenced.evidence.length).toBe(2);
+
+      const sealed = parseResult(await client.callTool({
+        name: 'horizon_seal_evidence',
+        arguments: { decisionId: created.id, evidenceId: 'E-002' },
+      }));
+      expect(sealed.changed).toBe(true);
+      expect(sealed.hash).toMatch(/^[a-f0-9]{64}$/u);
 
       const second = parseResult(await client.callTool({
         name: 'horizon_create',

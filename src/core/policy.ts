@@ -80,11 +80,18 @@ export async function buildChangeGate(root: string, files: string[]): Promise<Ch
         evidence.strength === 'strong' &&
         findings.some((finding) => finding.evidenceId === evidence.id && finding.status === 'verified'),
       );
+      const sealedOk = findings.some((finding) => finding.status === 'verified' && finding.sealed);
       if (requireEvidence === 'strong' && !strongOk) {
         violations.push({
           level,
           decisionId: decision.id,
           message: `${decision.id} has no verified strong evidence`,
+        });
+      } else if (requireEvidence === 'sealed' && !sealedOk) {
+        violations.push({
+          level,
+          decisionId: decision.id,
+          message: `${decision.id} has no sealed evidence`,
         });
       } else if (requireEvidence === 'verified' && !acceptable.length) {
         violations.push({
@@ -190,8 +197,3 @@ export function changeGateMarkdown(gate: ChangeGate): string {
 
   return lines.join('\n');
 }
-
-
-
-
-

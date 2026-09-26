@@ -16,6 +16,7 @@ export interface EvidenceAudit {
   value: string;
   status: EvidenceAuditStatus;
   message: string;
+  sealed?: boolean;
 }
 
 export interface LedgerAudit {
@@ -23,6 +24,7 @@ export interface LedgerAudit {
   missing: number;
   external: number;
   unverifiable: number;
+  sealed: number;
   findings: EvidenceAudit[];
 }
 
@@ -37,6 +39,7 @@ export async function auditLedger(ledger: Decision[], root: string): Promise<Led
     verified: findings.filter((item) => item.status === 'verified').length,
     missing: findings.filter((item) => item.status === 'missing').length,
     external: findings.filter((item) => item.status === 'external').length,
+    sealed: findings.filter((item) => item.status === 'verified' && item.sealed).length,
     unverifiable: findings.filter((item) => item.status === 'unverifiable').length,
     findings,
   };
@@ -48,7 +51,7 @@ async function auditEvidence(decisionId: string, evidence: Evidence, root: strin
   }
 
   const hash = await verifyHash(evidence, root);
-  if (hash) return result(decisionId, evidence, hash.status, hash.message);
+  if (hash) return result(decisionId, evidence, hash.status, hash.message, hash.sealed);
 
   if (isUrl(evidence.value)) {
     return result(decisionId, evidence, 'external', 'external URL is not fetched by local audit');
@@ -65,7 +68,7 @@ async function auditEvidence(decisionId: string, evidence: Evidence, root: strin
   return result(decisionId, evidence, 'unverifiable', `${evidence.type} evidence has no deterministic local verifier`);
 }
 
-async function verifyHash(evidence: Evidence, root: string): Promise<{ status: EvidenceAuditStatus; message: string } | undefined> {
+async function verifyHash(evidence: Evidence, root: string): Promise<{ status: EvidenceAuditStatus; message: string; sealed?: boolean } | undefined> {
   if (!evidence.hash) return undefined;
   if (isUrl(evidence.value) || evidence.type === 'commit') {
     return { status: 'unverifiable', message: 'hash verification is supported for local file evidence only' };
@@ -75,7 +78,7 @@ async function verifyHash(evidence: Evidence, root: string): Promise<{ status: E
     const content = await fs.readFile(filePath);
     const actual = createHash('sha256').update(content).digest('hex');
     if (actual.toLowerCase() === evidence.hash.toLowerCase()) {
-      return { status: 'verified', message: `sha256 verified: ${evidence.value}` };
+      return { status: 'verified', message: `sha256 verified: ${evidence.value}`, sealed: true };
     }
     return { status: 'missing', message: `sha256 mismatch: ${evidence.value}` };
   } catch {
@@ -118,8 +121,9 @@ function result(
   evidence: Evidence,
   status: EvidenceAuditStatus,
   message: string,
+  sealed = false,
 ): EvidenceAudit {
-  return { decisionId, evidenceId: evidence.id, type: evidence.type, value: evidence.value, status, message };
+  return { decisionId, evidenceId: evidence.id, type: evidence.type, value: evidence.value, status, message, sealed };
 }
 
 function isUrl(value: string): boolean {

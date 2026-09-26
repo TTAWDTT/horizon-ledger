@@ -7,6 +7,7 @@ horizon list
 horizon show D-0001
 horizon update D-0001 --status decided
 horizon evidence D-0001 --type link --value https://sqlite.org --note "SQLite docs" --strength strong
+horizon seal D-0001 E-001
 horizon link D-0001 D-0002 --type supersedes
 horizon search sqlite
 horizon why sqlite

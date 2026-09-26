@@ -13,7 +13,7 @@ export interface Diagnostic {
 export function validateLedger(ledger: Decision[]): Diagnostic[] {
   const diagnostics: Diagnostic[] = [];
   const policyModes = new Set(['observe', 'review', 'block']);
-  const evidenceRequirements = new Set(['any', 'verified', 'strong']);
+  const evidenceRequirements = new Set(['any', 'verified', 'strong', 'sealed']);
   for (const d of ledger) {
     if (!d.title?.trim()) diagnostics.push({ level: 'error', id: d.id, message: 'missing title' });
     if (d.policy && !policyModes.has(d.policy.mode ?? 'review')) {

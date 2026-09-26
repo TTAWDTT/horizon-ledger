@@ -24,6 +24,9 @@ policy:
 - `requireEvidence: any` accepts any attached evidence.
 - `requireEvidence: verified` requires at least one locally verified evidence target.
 - `requireEvidence: strong` requires verified evidence with `strength: strong`.
+- `requireEvidence: sealed` requires verified evidence bound to content: a Git commit or a local file with a matching sha256 hash.
+
+Create a local file seal with `horizon seal D-0001 E-001`, or set `hash` when adding evidence. If the target changes, the gate fails until it is deliberately resealed with `--force`.
 
 A blocking decision must be `decided` and have the requested evidence. Missing evidence, non-decided status, and relevant conflicts become gate findings. Invalid policy metadata is reported as a validation error instead of being silently ignored.
 
