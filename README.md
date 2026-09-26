@@ -56,6 +56,12 @@ To use it with an MCP-compatible coding agent:
 horizon mcp
 ```
 
+To run a local web viewer:
+
+```bash
+horizon web
+```
+
 ## What you get
 
 - local-first, Git-friendly Markdown decisions
@@ -87,3 +93,4 @@ Horizon Ledger is open source under MIT. The project will be developed and itera
 ## Contributing
 
 Issues and pull requests are welcome. Please keep changes small and evidence-focused.
+

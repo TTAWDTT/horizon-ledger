@@ -13,6 +13,7 @@ import {
 } from '../core';
 import { initLedger } from '../core/ledger';
 import { startMcpServer } from '../mcp';
+import { startLedgerServer } from '../web/server';
 
 const program = new Command();
 
@@ -241,6 +242,19 @@ program
       return;
     }
     console.log(`Added evidence to ${updated.id}`);
+  });
+
+
+program
+  .command('web')
+  .description('Start a local web viewer for the ledger')
+  .option('-r, --root <path>', 'project root', '.')
+  .option('-p, --port <port>', 'port', '4173')
+  .action(async (options) => {
+    const root = path.resolve(options.root ?? '.');
+    const port = Number(options.port) || 4173;
+    await startLedgerServer(root, port);
+    console.log('Horizon Ledger web viewer listening on http://127.0.0.1:' + port);
   });
 
 program
