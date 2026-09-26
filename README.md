@@ -28,14 +28,16 @@ Horizon Ledger keeps decisions **close to code**, in Markdown + structured front
 
 ## Install
 
+Install the latest tagged Git release:
+
 ```bash
-bun add horizon-ledger
+bun add github:TTAWDTT/horizon-ledger#v0.16.1
 ```
 
 or
 
 ```bash
-npm install horizon-ledger
+npm install github:TTAWDTT/horizon-ledger#v0.16.1
 ```
 
 ## Quickstart
