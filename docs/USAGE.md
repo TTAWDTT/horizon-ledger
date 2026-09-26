@@ -92,3 +92,13 @@ Use it when a decision spans a monorepo package, service, client, or infrastruct
 ```
 
 Use `workspace: true` when `.horizon/workspace.json` describes packages inside one monorepo checkout.
+
+For a monorepo workspace, use the same action with workspace aggregation:
+
+```yaml
+- uses: TTAWDTT/horizon-ledger/.github/actions/validate@main
+  with:
+    root: .
+    strict: true
+    workspace: true
+```

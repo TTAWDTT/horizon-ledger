@@ -3,7 +3,7 @@ id: D-0015
 title: Map pull request files to workspace roots
 status: decided
 createdAt: 2026-09-26T12:03:53.741Z
-updatedAt: 2026-09-26T12:05:05.268Z
+updatedAt: 2026-09-26T12:24:24.466Z
 confidence: high
 horizon: medium
 kind: engineering
@@ -36,6 +36,11 @@ evidence:
     note: Workspace PR context action input
     strength: moderate
     id: E-003
+  - type: file
+    value: .github/actions/validate/action.yml
+    note: Workspace validation action input
+    strength: moderate
+    id: E-004
 ---
 
 ## Summary

@@ -5,13 +5,17 @@ branding:
   color: 'blue'
 inputs:
   root:
-    description: 'Repository root containing .horizon'
+    description: 'Repository root containing .horizon or workspace'
     required: false
     default: '.'
   strict:
     description: 'Fail on warnings as well as errors'
     required: false
     default: 'true'
+  workspace:
+    description: 'Use Horizon workspace aggregation for monorepo roots'
+    required: false
+    default: 'false'
 runs:
   using: composite
   steps:
@@ -25,4 +29,13 @@ runs:
       run: bun install --frozen-lockfile
     - name: Validate decisions
       shell: bash
-      run: bun run "${{ github.action_path }}/src/cli/index.ts" validate ${{ inputs.strict == 'true' && '--strict' || '' }} --root "${{ inputs.root }}"
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        ROOT: ${{ inputs.root }}
+      run: |
+        set -euo pipefail
+        if [[ "${{ inputs.workspace }}" == "true" ]]; then
+          bun run "$ACTION_PATH/src/cli/index.ts" workspace validate --strict --root "$ROOT"
+        else
+          bun run "$ACTION_PATH/src/cli/index.ts" validate --strict --root "$ROOT"
+        fi
