@@ -16,6 +16,7 @@ horizon score
 horizon validate
 horizon conflicts
 horizon audit
+horizon pr-context --base main --head HEAD
 horizon graph
 horizon export --format markdown --out DECISIONS.md
 horizon doctor

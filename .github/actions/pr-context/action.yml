@@ -1,0 +1,57 @@
+name: 'Horizon PR Context'
+description: 'Post the Horizon decisions that apply to files changed in a pull request'
+branding:
+  icon: 'message-square'
+  color: 'blue'
+inputs:
+  base-sha:
+    description: 'Pull request base SHA or ref'
+    required: true
+  head-sha:
+    description: 'Pull request head SHA or ref'
+    required: true
+  root:
+    description: 'Repository root containing .horizon'
+    required: false
+    default: '.'
+  token:
+    description: 'GitHub token used for optional PR comment'
+    required: false
+    default: ${{ github.token }}
+  comment:
+    description: 'Create or update a pull request comment'
+    required: false
+    default: 'false'
+runs:
+  using: composite
+  steps:
+    - name: Set up Bun
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: latest
+    - name: Install Horizon Ledger
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: bun install --frozen-lockfile
+    - name: Build PR context
+      id: horizon
+      shell: bash
+      env:
+        BASE_SHA: ${{ inputs.base-sha }}
+        HEAD_SHA: ${{ inputs.head-sha }}
+        ROOT: ${{ inputs.root }}
+        ACTION_PATH: ${{ github.action_path }}
+      run: |
+        set -euo pipefail
+        OUT="${RUNNER_TEMP}/horizon-pr-context.md"
+        bun run "$ACTION_PATH/src/cli/index.ts" pr-context --base "$BASE_SHA" --head "$HEAD_SHA" --root "$ROOT" --out "$OUT"
+        cat "$OUT" >> "$GITHUB_STEP_SUMMARY"
+        echo "file=$OUT" >> "$GITHUB_OUTPUT"
+    - name: Update PR comment
+      if: ${{ inputs.comment == 'true' }}
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+      run: |
+        gh pr comment "$PR_NUMBER" --edit-last --create-if-none --body-file "${{ steps.horizon.outputs.file }}" --repo "$GITHUB_REPOSITORY"

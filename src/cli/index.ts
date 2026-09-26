@@ -13,6 +13,8 @@ import {
   auditLedger,
   buildContextBundle,
   contextBundleMarkdown,
+  buildPullRequestContext,
+  pullRequestContextMarkdown,
   searchLedger,
   buildGraph,
   scoreDecision,
@@ -29,7 +31,7 @@ const program = new Command();
 program
   .name('horizon')
   .description('Local-first decision ledger for humans and AI agents.')
-  .version('0.8.0');
+  .version('0.9.0');
 
 program
   .command('init')
@@ -352,6 +354,26 @@ program
     console.log(`Scanned ${report.scanned}, created ${report.created}, skipped ${report.skipped}.`);
     for (const item of report.results) {
       console.log(`${item.action}\t${item.id ?? "-"}\t${item.title}\t${item.file}${item.reason ? " (" + item.reason + ")" : ""}`);
+    }
+  });
+
+program
+  .command('pr-context')
+  .description('Build decision context for files changed in a pull request')
+  .option('-b, --base <sha>', 'base ref or sha')
+  .option('-h, --head <sha>', 'head ref or sha')
+  .option('-f, --format <format>', 'json | markdown', 'markdown')
+  .option('-o, --out <path>', 'write to a file instead of stdout')
+  .option('-r, --root <path>', 'project root', '.')
+  .action(async (options) => {
+    const root = path.resolve(options.root ?? '.');
+    const context = await buildPullRequestContext(root, options.base, options.head);
+    const payload = options.format === "json" ? JSON.stringify(context, null, 2) : pullRequestContextMarkdown(context);
+    if (options.out) {
+      await import('node:fs/promises').then((fs) => fs.writeFile(options.out, payload, 'utf8'));
+      console.log('Wrote ' + options.out);
+    } else {
+      console.log(payload);
     }
   });
 

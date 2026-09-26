@@ -1,6 +1,10 @@
 # Changelog
 
-## 0.8.0
+## 0.9.0
+
+- Added horizon pr-context for deterministic pull request context.
+- Added a reusable GitHub Action that comments with decisions for changed files.
+
 
 - Added deterministic decision context bundles for files and text queries.
 - Added `horizon context` CLI and `horizon_context` MCP read tool.

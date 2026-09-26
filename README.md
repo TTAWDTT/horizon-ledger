@@ -54,6 +54,7 @@ horizon validate
 horizon graph
 horizon import-adr docs/adr --dry-run
 horizon context src/core
+horizon pr-context --base main --head HEAD
 horizon export --format markdown --out DECISIONS.md
 horizon doctor
 horizon web
