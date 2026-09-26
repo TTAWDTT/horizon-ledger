@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.20.0
+
+- Added portable, hash-bound Horizon evidence packages.
+- Added `horizon workspace evidence export`, `inspect`, and `verify`.
+- Embedded a workspace decision pack and policy gate report with an in-toto Statement v1 subject set.
+- Added read-only `horizon_workspace_evidence_export` and `horizon_workspace_evidence_verify` MCP tools.
+
 ## 0.19.0
 
 - Added read-only `horizon_verify_gate_report` MCP tool.

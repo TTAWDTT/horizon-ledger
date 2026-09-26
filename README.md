@@ -90,9 +90,12 @@ horizon workspace export --format markdown --out WORKSPACE.md
 horizon workspace pack export --out WORKSPACE-PACK.json
 horizon workspace pack import WORKSPACE-PACK.json
 horizon workspace context storage
+
+horizon workspace evidence export --out EVIDENCE-PACK.json
+horizon workspace evidence verify EVIDENCE-PACK.json --expect-verdict pass
 ```
 
-The MCP server also exposes read-only `horizon_workspace_list`, `horizon_workspace_audit`, `horizon_workspace_context`, `horizon_workspace_validate`, `horizon_workspace_gate`, and `horizon_workspace_pack_export`, and `horizon_workspace_pack_import_plan` tools, so coding agents can query cross-root decisions without a cloud service. Workspace packs are deterministic and SHA-256-bound, so you can review, archive, or hand off decisions without a cloud service. Pack import defaults to a read-only plan; add --write to apply it. Workspace configs are validated strictly: duplicate IDs, names, and aliases fail fast instead of silently degrading into a partial graph.
+The MCP server also exposes read-only `horizon_workspace_list`, `horizon_workspace_audit`, `horizon_workspace_context`, `horizon_workspace_validate`, `horizon_workspace_gate`, `horizon_workspace_pack_export`, `horizon_workspace_pack_import_plan`, `horizon_workspace_evidence_export`, and `horizon_workspace_evidence_verify` tools, so coding agents can query cross-root decisions without a cloud service. Workspace packs and evidence packages are deterministic and SHA-256-bound, so you can review, archive, or hand off decisions without a cloud service. Pack import defaults to a read-only plan; add --write to apply it. Workspace configs are validated strictly: duplicate IDs, names, and aliases fail fast instead of silently degrading into a partial graph.
 
 To run a local decision dashboard:
 
@@ -123,7 +126,7 @@ Read-only is the default. To allow decision capture, use `horizon mcp --write`.
 - structured alternatives, evidence, provenance, and optional sha256 seals
 - graph, search, scoring, cross-repository workspaces, and portable packs
 - a local-only human dashboard with no telemetry
-- optional sha256 evidence seals and hash-bound gate reports
+- optional sha256 evidence seals, hash-bound gate reports, and portable evidence packages
 - useful for humans, coding agents, and opt-in CI gates
 - no vendor lock-in, no hosted database, no LLM required
 
@@ -144,7 +147,7 @@ Read-only is the default. To allow decision capture, use `horizon mcp --write`.
 - ADR import (shipped)
 - policy/evidence change gates, sha256 seals, and hash-bound reports (shipped)
 - decision context bundles and PR context (shipped)
-- portable workspace packs (export/inspect/import planning/apply shipped), then richer sync
+- portable workspace packs and decision evidence packages (shipped)
 
 ## Why open source
 

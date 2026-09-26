@@ -1,6 +1,6 @@
-import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { HORIZON_VERSION } from '../version';
+import { sha256Id, stableStringify } from './hash';
 
 export const GATE_REPORT_KIND = 'horizon.policy-gate-report';
 
@@ -32,24 +32,8 @@ export interface GateReportInput {
 
 type Payload = Omit<GateReport, 'reportId'>;
 
-function stableStringify(value: unknown): string {
-  if (value === null) return 'null';
-  if (Array.isArray(value)) return `[${value.map((item) => stableStringify(item)).join(',')}]`;
-  if (typeof value === 'object') {
-    const entries = Object.entries(value as Record<string, unknown>)
-      .filter(([, item]) => item !== undefined)
-      .sort(([left], [right]) => left.localeCompare(right));
-    return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${stableStringify(item)}`).join(',')}}`;
-  }
-  return JSON.stringify(value) ?? 'null';
-}
-
-function sha256(value: string): string {
-  return createHash('sha256').update(value, 'utf8').digest('hex');
-}
-
 export function gateDigestFor(gate: unknown): string {
-  return `sha256:${sha256(stableStringify(gate))}`;
+  return sha256Id(stableStringify(gate));
 }
 
 export function createGateReport(input: GateReportInput): GateReport {
@@ -71,7 +55,7 @@ export function createGateReport(input: GateReportInput): GateReport {
     gateDigest: gateDigestFor(input.gate),
     gate: input.gate,
   };
-  return { ...payload, reportId: `sha256:${sha256(stableStringify(payload))}` };
+  return { ...payload, reportId: sha256Id(stableStringify(payload)) };
 }
 
 export function parseGateReport(raw: string): GateReport {
@@ -120,7 +104,7 @@ export function parseGateReport(raw: string): GateReport {
     throw new Error('Invalid Horizon gate report: gate digest mismatch');
   }
   const { reportId, ...payload } = candidate as GateReport;
-  const expectedReportId = `sha256:${sha256(stableStringify(payload))}`;
+  const expectedReportId = sha256Id(stableStringify(payload));
   if (reportId !== expectedReportId) {
     throw new Error('Invalid Horizon gate report: report id mismatch');
   }

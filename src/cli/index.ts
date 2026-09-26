@@ -42,6 +42,11 @@ import {
   inspectWorkspacePack,
   planWorkspacePackImport,
   parseWorkspacePack,
+  exportWorkspaceEvidencePack,
+  inspectWorkspaceEvidencePack,
+  parseWorkspaceEvidencePack,
+  verifyWorkspaceEvidencePack,
+  workspaceEvidencePackMarkdown,
   workspacePackImportPlanMarkdown,
   workspacePackMarkdown,
   initWorkspace,
@@ -893,6 +898,97 @@ workspacePack
     }
   });
 
+const workspaceEvidence = workspace
+  .command('evidence')
+  .description('Export and verify portable decision evidence packages');
+
+workspaceEvidence
+  .command('export')
+  .description('Export a hash-bound workspace pack plus hash-bound policy gate report')
+  .option('-b, --base <sha>', 'base ref or sha', 'HEAD~1')
+  .option('-h, --head <sha>', 'head ref or sha', 'HEAD')
+  .option('--file <path>', 'changed path (repeatable)', (v: string, prev: string[]) => [...(prev ?? []), v], [])
+  .option('-f, --format <format>', 'json | markdown', 'json')
+  .option('-o, --out <path>', 'write to a file instead of stdout')
+  .option('-r, --root <path>', 'workspace root', '.')
+  .action(async (options: { base?: string; head?: string; file?: string[]; format?: string; out?: string; root?: string }) => {
+    const root = path.resolve(options.root ?? '.');
+    try {
+      const pack = await exportWorkspaceEvidencePack(root, {
+        base: options.base,
+        head: options.head,
+        files: options.file?.length ? options.file : undefined,
+      });
+      const payload = options.format === 'markdown'
+        ? workspaceEvidencePackMarkdown(pack)
+        : JSON.stringify(pack, null, 2);
+      if (options.out) {
+        const fs = await import('node:fs/promises');
+        await fs.writeFile(options.out, payload, 'utf8');
+        console.log(`Evidence pack ${pack.evidencePackId} -> ${options.out}`);
+      } else {
+        console.log(payload);
+      }
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  });
+
+workspaceEvidence
+  .command('inspect <file>')
+  .description('Validate and summarize an evidence package without writing files')
+  .option('-f, --format <format>', 'json | markdown', 'json')
+  .action(async (file: string, options: { format?: string }) => {
+    try {
+      const fs = await import('node:fs/promises');
+      const raw = await fs.readFile(file, 'utf8');
+      const pack = parseWorkspaceEvidencePack(raw);
+      console.log(options.format === 'markdown'
+        ? workspaceEvidencePackMarkdown(pack)
+        : JSON.stringify(inspectWorkspaceEvidencePack(raw), null, 2));
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  });
+
+workspaceEvidence
+  .command('verify <file>')
+  .description('Verify an evidence package and optional embedded artifact expectations')
+  .option('--expect-evidence-pack-id <id>', 'required evidence pack id')
+  .option('--expect-pack-id <id>', 'required embedded workspace pack id')
+  .option('--expect-gate-report-id <id>', 'required embedded gate report id')
+  .option('--expect-gate-digest <id>', 'required embedded gate digest')
+  .option('--expect-verdict <verdict>', 'required pass | warn | block')
+  .option('-f, --format <format>', 'json | markdown', 'json')
+  .action(async (file: string, options: {
+    expectEvidencePackId?: string;
+    expectPackId?: string;
+    expectGateReportId?: string;
+    expectGateDigest?: string;
+    expectVerdict?: 'pass' | 'warn' | 'block';
+    format?: string;
+  }) => {
+    try {
+      const fs = await import('node:fs/promises');
+      const raw = await fs.readFile(file, 'utf8');
+      const verification = verifyWorkspaceEvidencePack(raw, {
+        evidencePackId: options.expectEvidencePackId,
+        packId: options.expectPackId,
+        gateReportId: options.expectGateReportId,
+        gateDigest: options.expectGateDigest,
+        gateVerdict: options.expectVerdict,
+      });
+      const payload = options.format === 'markdown'
+        ? workspaceEvidencePackMarkdown(parseWorkspaceEvidencePack(raw))
+        : JSON.stringify(verification, null, 2);
+      console.log(payload);
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  });
 program
   .command('web')
   .description('Start a local web viewer for the ledger')

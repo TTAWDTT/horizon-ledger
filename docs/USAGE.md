@@ -42,6 +42,9 @@ horizon workspace export --format markdown --out WORKSPACE.md
 horizon workspace pack export --out WORKSPACE-PACK.json
 horizon workspace pack inspect WORKSPACE-PACK.json
 horizon workspace pack import WORKSPACE-PACK.json
+horizon workspace evidence export --base main --head HEAD --out EVIDENCE-PACK.json
+horizon workspace evidence inspect EVIDENCE-PACK.json
+horizon workspace evidence verify EVIDENCE-PACK.json --expect-verdict pass
 horizon workspace context storage
 ```
 

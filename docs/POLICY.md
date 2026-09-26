@@ -61,7 +61,19 @@ The read-only `horizon_workspace_gate` MCP tool uses the same deterministic eval
 
 Agents can verify an existing report with the read-only `horizon_verify_gate_report` tool. It accepts raw report JSON and optional `expectReportId`, `expectGateDigest`, and `expectVerdict` guards.
 
+## Evidence packages
+
+To retain a policy decision, export the evidence package rather than copying unrelated files:
+
+```bash
+horizon workspace evidence export --base main --head HEAD --out evidence-pack.json
+horizon workspace evidence verify evidence-pack.json --expect-verdict pass --expect-gate-digest sha256:...
+```
+
+The package embeds the workspace decision pack and the exact hash-bound gate report. It also exposes an in-toto Statement v1 subject set, so downstream attestation stores can retain the same artifact without Horizon requiring a signing service.
+
 ## CI
+
 
 For a single root, add a reusable gate step:
 

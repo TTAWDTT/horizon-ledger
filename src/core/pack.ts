@@ -1,6 +1,6 @@
-import { createHash } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { sha256Hex, sha256Id, stableStringify } from './hash';
 import { readDecisionFile } from './ledger';
 import { findConflicts, type ConflictDiagnostic } from './conflicts';
 import { auditWorkspace, readWorkspace, readWorkspaceLedger, workspaceDiagnostics, workspaceSummary, type WorkspaceConfig, type WorkspaceDiagnostic, type WorkspaceRootSummary } from './workspace';
@@ -82,24 +82,8 @@ export interface WorkspacePackInspection {
   audit: WorkspacePack['audit'];
 }
 
-function stableStringify(value: unknown): string {
-  if (value === null) return 'null';
-  if (Array.isArray(value)) return `[${value.map((item) => stableStringify(item)).join(',')}]`;
-  if (typeof value === 'object') {
-    const entries = Object.entries(value as Record<string, unknown>)
-      .filter(([, item]) => item !== undefined)
-      .sort(([left], [right]) => left.localeCompare(right));
-    return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${stableStringify(item)}`).join(',')}}`;
-  }
-  return JSON.stringify(value) ?? 'null';
-}
-
-function sha256(value: string): string {
-  return createHash('sha256').update(value, 'utf8').digest('hex');
-}
-
 function packIdFor(value: Omit<WorkspacePack, 'packId'>): string {
-  return `sha256:${sha256(stableStringify(value))}`;
+  return sha256Id(stableStringify(value));
 }
 
 async function readWorkspaceDecisionFiles(
@@ -164,7 +148,7 @@ export async function exportWorkspacePack(root: string, config?: WorkspaceConfig
       rootPath: record.rootPath,
       file: record.file,
       markdown: record.markdown,
-      markdownSha256: sha256(record.markdown),
+      markdownSha256: sha256Hex(record.markdown),
       decision: record.decision,
     })),
     conflicts: findConflicts(entries.map((entry) => entry.decision)),
@@ -224,7 +208,7 @@ export function parseWorkspacePack(raw: string): WorkspacePack {
     if (typeof decision.markdown !== 'string' || typeof decision.file !== 'string') {
       throw new Error('Invalid Horizon workspace pack: decision markdown is missing.');
     }
-    if (sha256(decision.markdown) !== decision.markdownSha256) {
+    if (sha256Hex(decision.markdown) !== decision.markdownSha256) {
       throw new Error(`Invalid Horizon workspace pack: markdown hash mismatch for ${decision.decision?.id ?? decision.file}.`);
     }
     if (typeof decision.rootPath !== 'string' || path.isAbsolute(decision.rootPath) || decision.rootPath.split('/').includes('.horizon')) {

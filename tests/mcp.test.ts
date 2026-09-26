@@ -124,6 +124,25 @@ describe('MCP server', () => {
       expect(packPlan.ok).toBe(true);
       expect(packPlan.reuseDecisions).toBe(1);
 
+      const evidence = parseResult(await client.callTool({
+        name: 'horizon_workspace_evidence_export',
+        arguments: { files: ['src/core/index.ts'] },
+      }));
+      expect(evidence.evidencePackId).toMatch(/^sha256:[a-f0-9]{64}$/u);
+      expect(evidence.artifacts.map((artifact: any) => artifact.name)).toEqual(['decision-pack.json', 'gate-report.json']);
+
+      const evidenceVerified = parseResult(await client.callTool({
+        name: 'horizon_workspace_evidence_verify',
+        arguments: { evidencePack: JSON.stringify(evidence), expectGateVerdict: 'pass' },
+      }));
+      expect(evidenceVerified.ok).toBe(true);
+      expect(evidenceVerified.packId).toBe(evidence.statement.predicate.packId);
+
+      const evidenceMismatch = await client.callTool({
+        name: 'horizon_workspace_evidence_verify',
+        arguments: { evidencePack: JSON.stringify(evidence), expectGateVerdict: 'block' },
+      });
+      expect(evidenceMismatch.isError).toBe(true);
       const validation = parseResult(await client.callTool({ name: 'horizon_workspace_validate', arguments: {} }));
       expect(validation.decisions).toBe(1);
       expect(validation.ok).toBe(true);

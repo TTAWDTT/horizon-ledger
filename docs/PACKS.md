@@ -37,3 +37,37 @@ The pack intentionally does not include the working tree, Git patches, secrets, 
 - A valid pack can be re-imported idempotently.
 
 Use `workspace pack inspect` to verify a pack before reading it further. Use `workspace pack import` without `--write` when you want an explicit review plan.
+## Decision evidence packages
+
+A workspace pack says *what was decided*. A gate report says *what policy allowed*. An evidence package binds both into one portable JSON artifact:
+
+```bash
+horizon workspace evidence export --base main --head HEAD --out evidence-pack.json
+horizon workspace evidence inspect evidence-pack.json
+horizon workspace evidence verify evidence-pack.json --expect-verdict pass
+```
+
+## Format
+
+A package is versioned JSON with:
+
+- `kind`: `horizon.evidence-pack`
+- `schemaVersion`: `1`
+- `evidencePackId`: canonical SHA-256 of the payload excluding `evidencePackId`
+- producer version and creation time
+- two named artifacts:
+  - `decision-pack.json` — the deterministic Horizon workspace pack
+  - `gate-report.json` — the hash-bound Horizon workspace gate report
+- canonical SHA-256 digests for each embedded artifact
+- an [in-toto Statement v1](https://in-toto.io/Statement/v1) subject set and a Horizon decision-evidence predicate
+
+Artifact digests are calculated over the canonical JSON serialization of the embedded object. The statement records the pack id, gate report id, gate digest, verdict, changed-file count, coverage, and workspace summary.
+
+## Contract
+
+- Export is read-only.
+- The file contains decisions, gate findings, and provenance; it does not include secrets, binaries, caches, or a live worktree.
+- Verification checks the package hash, both embedded artifact hashes, the workspace pack, the gate report, and statement consistency.
+- `inspect` validates without writing.
+- `verify` can additionally require exact pack, report, digest, or verdict values.
+- No signing or network call is required. The embedded in-toto Statement is signature-envelope ready, so an external DSSE/Sigstore workflow can sign it when your environment has key management.

@@ -30,6 +30,8 @@ import {
   addAlternative,
   addEvidence,
   verifyGateReport,
+  exportWorkspaceEvidencePack,
+  verifyWorkspaceEvidencePack,
   type Decision,
   type DecisionPolicy,
 } from '../core';
@@ -95,7 +97,7 @@ export interface McpServerOptions {
 export function createMcpServer(rootArg?: string, options: McpServerOptions = {}): McpServer {
   const root = path.resolve(rootArg ?? process.env.HORIZON_ROOT ?? '.');
   const allowWrite = options.write ?? process.env.HORIZON_MCP_WRITE === '1';
-  const server = new McpServer({ name: 'horizon-ledger', version: '0.19.0' });
+  const server = new McpServer({ name: 'horizon-ledger', version: '0.20.0' });
 
   server.registerTool('horizon_list', {
     description: 'List all decisions in the current Horizon Ledger',
@@ -225,6 +227,59 @@ export function createMcpServer(rootArg?: string, options: McpServerOptions = {}
       };
     }
   });
+  server.registerTool('horizon_workspace_evidence_export', {
+    description: 'Export a portable evidence package containing a workspace pack and hash-bound gate report',
+    inputSchema: {
+      base: z.string().optional().describe('Base ref or sha; defaults to HEAD~1'),
+      head: z.string().optional().describe('Head ref or sha; defaults to HEAD'),
+      files: z.array(z.string()).optional().describe('Changed workspace-relative paths'),
+    },
+    annotations: { readOnlyHint: true },
+  }, async ({ base, head, files }: { base?: string; head?: string; files?: string[] }) => {
+    try {
+      return jsonResult(await exportWorkspaceEvidencePack(root, { base, head, files }));
+    } catch (error) {
+      return {
+        content: [{ type: 'text' as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      };
+    }
+  });
+  server.registerTool('horizon_workspace_evidence_verify', {
+    description: 'Verify a portable Horizon evidence package and optional artifact expectations',
+    inputSchema: {
+      evidencePack: z.string().min(1).describe('Raw Horizon evidence package JSON'),
+      expectEvidencePackId: z.string().optional().describe('Required evidence pack id'),
+      expectPackId: z.string().optional().describe('Required embedded workspace pack id'),
+      expectGateReportId: z.string().optional().describe('Required embedded gate report id'),
+      expectGateDigest: z.string().optional().describe('Required embedded gate digest'),
+      expectGateVerdict: z.enum(['pass', 'warn', 'block']).optional().describe('Required gate verdict'),
+    },
+    annotations: { readOnlyHint: true },
+  }, async ({ evidencePack, expectEvidencePackId, expectPackId, expectGateReportId, expectGateDigest, expectGateVerdict }: {
+    evidencePack: string;
+    expectEvidencePackId?: string;
+    expectPackId?: string;
+    expectGateReportId?: string;
+    expectGateDigest?: string;
+    expectGateVerdict?: 'pass' | 'warn' | 'block';
+  }) => {
+    try {
+      return jsonResult(verifyWorkspaceEvidencePack(evidencePack, {
+        evidencePackId: expectEvidencePackId,
+        packId: expectPackId,
+        gateReportId: expectGateReportId,
+        gateDigest: expectGateDigest,
+        gateVerdict: expectGateVerdict,
+      }));
+    } catch (error) {
+      return {
+        content: [{ type: 'text' as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      };
+    }
+  });
+
   server.registerTool('horizon_workspace_gate', {
     description: 'Check changed workspace files against policy-governed decisions in each root',
     inputSchema: {

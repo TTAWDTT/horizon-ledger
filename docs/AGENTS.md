@@ -47,6 +47,8 @@ The server is read-only by default. Add `--write` only when you want the agent t
 - `horizon_gate` — check changed paths against opt-in decision policies
 - `horizon_workspace_gate` — check monorepo paths against policies in every enabled root
 - `horizon_verify_gate_report` — verify a raw hash-bound gate report and its optional verdict/digest expectations
+- `horizon_workspace_evidence_export` — export a portable decision evidence package
+- `horizon_workspace_evidence_verify` — verify the package, embedded pack, embedded report, and statement subjects
 - `horizon_context`
 
 ## Write tools

@@ -1,6 +1,6 @@
 {
   "name": "horizon-ledger",
-  "version": "0.19.0",
+  "version": "0.20.0",
   "description": "A local-first, Git-native decision ledger and workspace for humans and AI agents. Built and iterated by Codex.",
   "main": "dist/core/index.js",
   "types": "dist/core/index.d.ts",
@@ -36,7 +36,9 @@
     "policy",
     "gate",
     "evidence",
-    "sha256"
+    "sha256",
+    "evidence-pack",
+    "in-toto"
   ],
   "author": "Codex",
   "license": "MIT",

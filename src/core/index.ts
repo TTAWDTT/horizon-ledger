@@ -17,3 +17,5 @@ export * from './workspace';
 export * from './pack';
 export * from './policy';
 export * from './report';
+export * from './hash';
+export * from './evidence';
