@@ -124,6 +124,21 @@ describe('MCP server', () => {
       expect(packPlan.ok).toBe(true);
       expect(packPlan.reuseDecisions).toBe(1);
 
+      const resources = await client.listResources();
+      expect(resources.resources.map((resource: any) => resource.uri)).toContain('horizon://decisions');
+
+      const decisionResource = await client.readResource({
+        uri: 'horizon://decisions/D-0001',
+      });
+      const decisionContents = decisionResource.contents[0] as any;
+      expect(decisionResource.contents[0].uri).toBe('horizon://decisions/D-0001');
+      expect(JSON.parse(decisionResource.contents[0].text).id).toBe('D-0001');
+
+      const packResource = await client.readResource({ uri: 'horizon://workspace/pack' });
+      const packContents = JSON.parse(packResource.contents[0].text);
+      expect(packContents.packId).toMatch(/^sha256:[a-f0-9]{64}$/u);
+      expect(packContents.decisions).toHaveLength(1);
+
       const evidence = parseResult(await client.callTool({
         name: 'horizon_workspace_evidence_export',
         arguments: { files: ['src/core/index.ts'] },

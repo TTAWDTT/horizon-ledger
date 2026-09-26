@@ -63,3 +63,11 @@ Enabled only with `horizon mcp --write` or `HORIZON_MCP_WRITE=1`.
 - `horizon_seal_evidence` — bind a local evidence file to its current sha256 content
 
 Workspace tools are read-only in every mode; decision writes remain scoped to a single root. This gives an agent the same decision context a human reviewer would use and keeps durable decisions in Git rather than an opaque memory store.
+
+## Resources
+
+MCP hosts can also browse Horizon context as read-only resources:
+
+- `horizon://decisions` — JSON list of decisions
+- `horizon://decisions/{id}` — one decision with evidence and policy
+- `horizon://workspace/pack` — deterministic, hash-bound workspace pack

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.24.0
+
+- Added MCP resources for browsing decisions and workspace packs.
+- Added `horizon://decisions`, `horizon://decisions/{id}`, and `horizon://workspace/pack`.
+
 ## 0.23.0
 
 - Added SARIF 2.1.0 output for single-root and workspace policy gates.

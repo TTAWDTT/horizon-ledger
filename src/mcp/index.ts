@@ -1,4 +1,4 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod/v4';
 import path from 'node:path';
@@ -97,7 +97,7 @@ export interface McpServerOptions {
 export function createMcpServer(rootArg?: string, options: McpServerOptions = {}): McpServer {
   const root = path.resolve(rootArg ?? process.env.HORIZON_ROOT ?? '.');
   const allowWrite = options.write ?? process.env.HORIZON_MCP_WRITE === '1';
-  const server = new McpServer({ name: 'horizon-ledger', version: '0.23.0' });
+  const server = new McpServer({ name: 'horizon-ledger', version: '0.24.0' });
 
   server.registerTool('horizon_list', {
     description: 'List all decisions in the current Horizon Ledger',
@@ -282,6 +282,32 @@ export function createMcpServer(rootArg?: string, options: McpServerOptions = {}
       };
     }
   });
+
+
+  server.registerResource('Horizon decisions', 'horizon://decisions', {
+    description: 'All decisions in the current Horizon Ledger',
+    mimeType: 'application/json',
+  }, async (uri) => ({
+    contents: [{ uri: uri.toString(), mimeType: 'application/json', text: JSON.stringify(await readLedger(root), null, 2) }],
+  }));
+
+  server.registerResource('Horizon decision', new ResourceTemplate('horizon://decisions/{id}', { list: undefined }), {
+    description: 'One Horizon decision by id',
+    mimeType: 'application/json',
+  }, async (uri, { id }) => {
+    const decision = (await readLedger(root)).find((item) => item.id === id);
+    if (!decision) throw new Error(`Decision not found: ${id}`);
+    return {
+      contents: [{ uri: uri.toString(), mimeType: 'application/json', text: JSON.stringify(decision, null, 2) }],
+    };
+  });
+
+  server.registerResource('Horizon workspace pack', 'horizon://workspace/pack', {
+    description: 'Deterministic, hash-bound workspace decision pack',
+    mimeType: 'application/json',
+  }, async (uri) => ({
+    contents: [{ uri: uri.toString(), mimeType: 'application/json', text: JSON.stringify(await exportWorkspacePack(root), null, 2) }],
+  }));
 
   server.registerTool('horizon_workspace_gate', {
     description: 'Check changed workspace files against policy-governed decisions in each root',
