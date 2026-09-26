@@ -43,6 +43,7 @@ The server is read-only by default. Add `--write` only when you want the agent t
 - `horizon_workspace_context` — search decisions across enabled roots with root metadata
 - `horizon_workspace_validate` — validate workspace roots and cross-root conflicts
 - `horizon_workspace_pack_export` — export a deterministic, hash-bound workspace pack
+- `horizon_workspace_pack_import_plan` — plan an import without writing
 - `horizon_context`
 
 ## Write tools
