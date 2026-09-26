@@ -43,9 +43,9 @@ runs:
         set -uo pipefail
         OUT="${RUNNER_TEMP}/horizon-policy-gate.md"
         if [[ "${{ inputs.workspace }}" == "true" ]]; then
-          bun run "$ACTION_PATH/src/cli/index.ts" workspace gate --base "$BASE_SHA" --head "$HEAD_SHA" --root "$ROOT" --out "$OUT"
+          bun run "$ACTION_PATH/../../../src/cli/index.ts" workspace gate --base "$BASE_SHA" --head "$HEAD_SHA" --root "$ROOT" --out "$OUT"
         else
-          bun run "$ACTION_PATH/src/cli/index.ts" gate --base "$BASE_SHA" --head "$HEAD_SHA" --root "$ROOT" --out "$OUT"
+          bun run "$ACTION_PATH/../../../src/cli/index.ts" gate --base "$BASE_SHA" --head "$HEAD_SHA" --root "$ROOT" --out "$OUT"
         fi
         status=$?
         cat "$OUT" >> "$GITHUB_STEP_SUMMARY"

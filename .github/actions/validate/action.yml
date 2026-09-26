@@ -35,7 +35,7 @@ runs:
       run: |
         set -euo pipefail
         if [[ "${{ inputs.workspace }}" == "true" ]]; then
-          bun run "$ACTION_PATH/src/cli/index.ts" workspace validate --strict --root "$ROOT"
+          bun run "$ACTION_PATH/../../../src/cli/index.ts" workspace validate --strict --root "$ROOT"
         else
-          bun run "$ACTION_PATH/src/cli/index.ts" validate --strict --root "$ROOT"
+          bun run "$ACTION_PATH/../../../src/cli/index.ts" validate --strict --root "$ROOT"
         fi

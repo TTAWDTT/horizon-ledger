@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.16.1
+
+- Fixed composite Action source resolution for gate, validation, and PR context.
+- Added CI coverage for Action path resolution.
+
 ## 0.16.0
 
 - Added a reusable Horizon policy gate GitHub Action.

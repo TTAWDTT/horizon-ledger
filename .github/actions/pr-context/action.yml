@@ -49,9 +49,9 @@ runs:
         set -euo pipefail
         OUT="${RUNNER_TEMP}/horizon-pr-context.md"
         if [[ "${{ inputs.workspace }}" == "true" ]]; then
-          bun run "$ACTION_PATH/src/cli/index.ts" workspace pr-context --base "$BASE_SHA" --head "$HEAD_SHA" --root "$ROOT" --out "$OUT"
+          bun run "$ACTION_PATH/../../../src/cli/index.ts" workspace pr-context --base "$BASE_SHA" --head "$HEAD_SHA" --root "$ROOT" --out "$OUT"
         else
-          bun run "$ACTION_PATH/src/cli/index.ts" pr-context --base "$BASE_SHA" --head "$HEAD_SHA" --root "$ROOT" --out "$OUT"
+          bun run "$ACTION_PATH/../../../src/cli/index.ts" pr-context --base "$BASE_SHA" --head "$HEAD_SHA" --root "$ROOT" --out "$OUT"
         fi
         cat "$OUT" >> "$GITHUB_STEP_SUMMARY"
         echo "file=$OUT" >> "$GITHUB_OUTPUT"
