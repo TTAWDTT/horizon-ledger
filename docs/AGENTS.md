@@ -37,6 +37,9 @@ The server is read-only by default. Add `--write` only when you want the agent t
 - `horizon_validate`
 - `horizon_conflicts`
 - `horizon_audit`
+- `horizon_workspace_list` — show root provenance and counts across a workspace
+- `horizon_workspace_context` — search decisions across enabled roots with root metadata
+- `horizon_workspace_validate` — validate workspace roots and cross-root conflicts
 - `horizon_context`
 
 ## Write tools
@@ -49,4 +52,4 @@ Enabled only with `horizon mcp --write` or `HORIZON_MCP_WRITE=1`.
 - `horizon_add_alternative` — record another considered option
 - `horizon_add_evidence` — attach commits, files, docs, tests, benchmarks, meetings, or sessions
 
-This gives an agent the same decision context a human reviewer would use and keeps durable decisions in Git rather than an opaque memory store.
+Workspace tools are read-only in every mode; decision writes remain scoped to a single root. This gives an agent the same decision context a human reviewer would use and keeps durable decisions in Git rather than an opaque memory store.

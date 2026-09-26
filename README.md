@@ -71,6 +71,8 @@ horizon workspace validate
 horizon workspace context storage
 ```
 
+The MCP server also exposes read-only `horizon_workspace_list`, `horizon_workspace_context`, and `horizon_workspace_validate` tools, so coding agents can query cross-root decisions without a cloud service.
+
 To run a local decision dashboard:
 
 ```bash

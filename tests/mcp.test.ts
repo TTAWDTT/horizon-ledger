@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
-import { readLedger } from '../src/core';
+import { createDecision, initLedger, initWorkspace, readLedger } from '../src/core';
 import { createMcpServer } from '../src/mcp';
 
 function parseResult(result: any): any {
@@ -31,6 +31,46 @@ describe('MCP server', () => {
     expect(names).toContain('horizon_context');
     expect(names).not.toContain('horizon_create');
     await readonly.close();
+  });
+
+  it('exposes workspace tools as read-only context', async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'horizon-mcp-workspace-'));
+    const server = createMcpServer(root);
+    const client = await connect(server);
+    try {
+      const empty = await client.callTool({ name: 'horizon_workspace_validate', arguments: {} });
+      expect(empty.isError).toBe(true);
+
+      await initLedger(root);
+      await initWorkspace(root);
+      const created = await createDecision(root, {
+        title: 'Use SQLite for workspace storage',
+        summary: 'SQLite keeps local data portable.',
+        context: 'The workspace needs local-first storage.',
+        decision: 'Use SQLite.',
+        consequences: 'No hosted dependency.',
+        scope: ['core'],
+        alternatives: [{ id: 'A-001', name: 'Postgres', verdict: 'rejected', reason: 'Too heavy locally.' }],
+        evidence: [{ id: 'E-001', type: 'file', value: 'src/core/index.ts', strength: 'strong' }],
+      });
+
+      const summary = parseResult(await client.callTool({ name: 'horizon_workspace_list', arguments: {} }));
+      expect(summary.decisions).toBe(1);
+      expect(summary.roots[0].decisions).toBe(1);
+
+      const context = parseResult(await client.callTool({
+        name: 'horizon_workspace_context',
+        arguments: { query: 'SQLite' },
+      }));
+      expect(context.decisions[0].decision.id).toBe(created.id);
+
+      const validation = parseResult(await client.callTool({ name: 'horizon_workspace_validate', arguments: {} }));
+      expect(validation.decisions).toBe(1);
+      expect(validation.ok).toBe(true);
+    } finally {
+      await client.close();
+      await fs.rm(root, { recursive: true, force: true });
+    }
   });
 
   it('captures and evolves decisions through write tools', async () => {

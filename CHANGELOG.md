@@ -6,6 +6,7 @@
 - Added `horizon workspace init`, `add`, `list`, `validate`, and `context`.
 - Added workspace diagnostics for duplicate IDs, missing roots, and cross-root conflicts.
 - Added deterministic cross-repository agent context with root provenance.
+- Added read-only `horizon_workspace_list`, `horizon_workspace_context`, and `horizon_workspace_validate` MCP tools.
 
 ## 0.9.0
 

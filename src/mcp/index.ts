@@ -12,6 +12,11 @@ import {
   auditLedger,
   buildContextBundle,
   decisionsForFile,
+  buildWorkspaceContext,
+  readWorkspace,
+  readWorkspaceLedger,
+  validateWorkspace,
+  workspaceSummary,
   createDecision,
   updateDecision,
   addLink,
@@ -45,6 +50,13 @@ const alternativeVerdictSchema = z.enum(['accepted', 'rejected', 'deferred', 'un
 
 const relationSchema = z.enum(['supersedes', 'depends_on', 'related_to']);
 
+function workspaceNotFound(root: string) {
+  return {
+    content: [{ type: 'text' as const, text: `No Horizon workspace found at ${root}` }],
+    isError: true,
+  };
+}
+
 const alternativeInputSchema = z.object({
   name: z.string().min(1).describe('Alternative considered'),
   verdict: alternativeVerdictSchema.default('unknown').describe('Whether this alternative was chosen or rejected'),
@@ -69,7 +81,7 @@ export interface McpServerOptions {
 export function createMcpServer(rootArg?: string, options: McpServerOptions = {}): McpServer {
   const root = path.resolve(rootArg ?? process.env.HORIZON_ROOT ?? '.');
   const allowWrite = options.write ?? process.env.HORIZON_MCP_WRITE === '1';
-  const server = new McpServer({ name: 'horizon-ledger', version: '0.9.0' });
+  const server = new McpServer({ name: 'horizon-ledger', version: '0.10.0' });
 
   server.registerTool('horizon_list', {
     description: 'List all decisions in the current Horizon Ledger',
@@ -113,6 +125,41 @@ export function createMcpServer(rootArg?: string, options: McpServerOptions = {}
   }, async () => {
     const ledger = await readLedger(root);
     return jsonResult(ledger.map((d) => ({ id: d.id, title: d.title, score: scoreDecision(d) })));
+  });
+
+  server.registerTool('horizon_workspace_list', {
+    description: 'List roots and decision counts in a Horizon workspace',
+    inputSchema: {},
+    annotations: { readOnlyHint: true },
+  }, async () => {
+    const workspace = await readWorkspace(root);
+    if (!workspace) return workspaceNotFound(root);
+    const entries = await readWorkspaceLedger(root, workspace);
+    return jsonResult(workspaceSummary(entries, workspace));
+  });
+
+  server.registerTool('horizon_workspace_context', {
+    description: 'Search decisions across all enabled workspace roots with provenance',
+    inputSchema: { query: z.string().describe('Search query') },
+    annotations: { readOnlyHint: true },
+  }, async ({ query }: { query: string }) => {
+    try {
+      return jsonResult(await buildWorkspaceContext(root, query));
+    } catch {
+      return workspaceNotFound(root);
+    }
+  });
+
+  server.registerTool('horizon_workspace_validate', {
+    description: 'Validate all enabled workspace roots as one decision graph',
+    inputSchema: {},
+    annotations: { readOnlyHint: true },
+  }, async () => {
+    try {
+      return jsonResult(await validateWorkspace(root));
+    } catch {
+      return workspaceNotFound(root);
+    }
   });
 
   server.registerTool('horizon_validate', {
