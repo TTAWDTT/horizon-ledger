@@ -195,6 +195,9 @@ program
       const d = hit.decision;
       console.log(d.id + ' ' + d.title);
       console.log('  ' + (d.decision || d.summary || 'No decision text'));
+      for (const e of d.evidence ?? []) {
+        console.log('  evidence: ' + e.type + ' ' + (e.title || e.value));
+      }
       console.log('  score=' + scoreDecision(d).score + '/' + scoreDecision(d).total + ' ' + hit.reason);
     }
   });
