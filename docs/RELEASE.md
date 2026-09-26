@@ -3,7 +3,7 @@
 - Run `bun run typecheck && bun run build && bun run test`.
 - Update `package.json` and `CHANGELOG.md`.
 - Commit the release.
-- Add an `NPM_TOKEN` repository secret.
+- Add an `NPM_TOKEN` repository secret. The tag also creates a GitHub release before npm publishing, so GitHub installation remains useful while npm credentials are being configured.
 - Tag and push:
 
 ```bash
