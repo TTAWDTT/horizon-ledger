@@ -192,3 +192,23 @@ describe('workspace compliance report', () => {
     expect(verifyWorkspaceCompliance(raw, { profileId: 'expectation-test' }).ok).toBe(true);
   });
 });
+
+  it('rejects inconsistent statement profile metadata even if the report id is recomputed', async () => {
+    const workspaceRoot = await makeWorkspaceCompliance();
+    const profile: ComplianceProfile = {
+      schemaVersion: 1,
+      id: 'statement-test',
+      name: 'Statement test',
+      version: '1.0.0',
+      controls: [
+        { id: 'C-001', title: 'Has evidence', tags: ['security'], requireEvidence: 'verified' },
+      ],
+    };
+    const report = await exportWorkspaceCompliance(workspaceRoot, profile);
+    const forged = structuredClone(report);
+    forged.statement.predicate.profileId = 'other-profile';
+    const { reportId, ...payload } = forged;
+    const nextId = sha256Id(stableStringify(payload));
+    const raw = JSON.stringify({ ...forged, reportId: nextId });
+    expect(() => parseWorkspaceCompliance(raw)).toThrow(/statement profile mismatch/u);
+  });

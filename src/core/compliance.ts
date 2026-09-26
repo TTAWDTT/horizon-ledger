@@ -551,6 +551,13 @@ export function parseWorkspaceCompliance(raw: string): WorkspaceComplianceReport
   if (statement.predicate.packId !== pack.packId) {
     throw new Error('Invalid Horizon compliance report: statement pack id mismatch');
   }
+  if (statement.predicate.profileId !== profile.id
+    || statement.predicate.profileName !== profile.name
+    || statement.predicate.profileVersion !== profile.version
+    || statement.predicate.framework !== (profile.framework ?? 'custom')
+    || statement.predicate.profileDigest !== payload.profile.profileDigest) {
+    throw new Error('Invalid Horizon compliance report: statement profile mismatch');
+  }
 
   const controls = evaluateComplianceControls(profile, pack.decisions, payload.evidenceFindings);
   const summary = complianceSummary(controls, pack.workspace.decisionCount, payload.evidenceFindings);
