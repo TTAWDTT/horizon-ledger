@@ -101,6 +101,19 @@ A workspace aggregates decisions from several Horizon roots without copying or c
 
 Use it when a decision spans a monorepo package, service, client, or infrastructure repository. `workspace export` creates a portable review or audit report with root provenance and evidence findings. `workspace context` preserves the root name and path as provenance, while `workspace validate` checks every enabled root as one graph. Duplicate decision IDs, contradictory alternatives, dangling relationships, unreadable roots, and missing local evidence are reported together. Workspace config itself is also validated for duplicate IDs, duplicate names, duplicate resolved paths, unsafe metadata paths, and invalid enabled values; read or write commands fail with structured diagnostics instead of treating corruption as an absent workspace. `workspace audit` resolves local paths and Git commits inside each root instead of using the workspace root as a blanket target.
 
+### Release audit action
+
+```yaml
+- uses: TTAWDTT/horizon-ledger/.github/actions/release-audit@main
+  with:
+    base-sha: ${{ github.event.pull_request.base.sha }}
+    head-sha: ${{ github.event.pull_request.head.sha }}
+    root: .
+    artifact: true
+```
+
+The Action exposes `release-audit`, `release-audit-id`, `gate-verdict`, `trace-commits`, `attributed-commits`, and `unattributed-commits` outputs and uploads the JSON audit.
+
 ### Workspace PR action
 
 ```yaml

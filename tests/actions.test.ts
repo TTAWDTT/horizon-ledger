@@ -7,6 +7,7 @@ const actionFiles = [
   '.github/actions/pr-context/action.yml',
   '.github/actions/validate/action.yml',
   '.github/actions/evidence/action.yml',
+  '.github/actions/release-audit/action.yml',
 ];
 
 describe('composite actions', () => {
@@ -32,3 +33,14 @@ describe('composite actions', () => {
     expect(content).toContain('actions/upload-artifact@v4');
   });
 });
+
+  it('supports release audit artifact upload and trace outputs', async () => {
+    const content = await fs.readFile(path.join(process.cwd(), '.github/actions/release-audit/action.yml'), 'utf8');
+    expect(content).toContain('workspace release export');
+    expect(content).toContain('release-audit-id');
+    expect(content).toContain('gate-verdict');
+    expect(content).toContain('trace-commits');
+    expect(content).toContain('attributed-commits');
+    expect(content).toContain('unattributed-commits');
+    expect(content).toContain('actions/upload-artifact@v4');
+  });

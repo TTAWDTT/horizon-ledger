@@ -121,3 +121,18 @@ The statement records the base/head context, changed paths, policy verdict, cove
 - `inspect` validates without writing.
 - `verify` can require exact audit, pack, report, digest, verdict, or trace-count values.
 - Like Horizon evidence packages, the Statement is signature-envelope ready for an external DSSE/Sigstore workflow. No signing or network call is required locally.
+
+## CI
+
+Use the reusable Action to publish the full release audit:
+
+```yaml
+- uses: TTAWDTT/horizon-ledger/.github/actions/release-audit@main
+  with:
+    base-sha: ${{ github.event.pull_request.base.sha }}
+    head-sha: ${{ github.event.pull_request.head.sha }}
+    root: .
+    artifact: true
+```
+
+The Action exposes `release-audit`, `release-audit-id`, `gate-verdict`, and commit trace-count outputs, then uploads the JSON artifact.

@@ -1,0 +1,119 @@
+name: 'Horizon Release Audit'
+description: 'Export a self-contained Horizon release audit and upload it as a workflow artifact'
+branding:
+  icon: 'shield'
+  color: 'blue'
+inputs:
+  base-sha:
+    description: 'Base ref or SHA'
+    required: false
+    default: ${{ github.event.pull_request.base.sha || 'HEAD~1' }}
+  head-sha:
+    description: 'Head ref or SHA'
+    required: false
+    default: 'HEAD'
+  root:
+    description: 'Workspace root containing .horizon/workspace.json'
+    required: false
+    default: '.'
+  artifact:
+    description: 'Upload the release audit as a workflow artifact'
+    required: false
+    default: 'true'
+  artifact-name:
+    description: 'Name for the uploaded release audit artifact'
+    required: false
+    default: 'horizon-release-audit'
+  artifact-retention-days:
+    description: 'Retention days for the uploaded release audit'
+    required: false
+    default: '365'
+outputs:
+  release-audit:
+    description: 'Path to the generated JSON release audit'
+    value: ${{ steps.horizon.outputs.release-audit }}
+  release-audit-id:
+    description: 'Canonical SHA-256 release audit id'
+    value: ${{ steps.horizon.outputs.release-audit-id }}
+  pack-id:
+    description: 'Canonical SHA-256 workspace pack id'
+    value: ${{ steps.horizon.outputs.pack-id }}
+  gate-report-id:
+    description: 'Canonical SHA-256 gate report id'
+    value: ${{ steps.horizon.outputs.gate-report-id }}
+  gate-verdict:
+    description: 'Verdict from the embedded workspace policy gate report'
+    value: ${{ steps.horizon.outputs.gate-verdict }}
+  trace-commits:
+    description: 'Commit count from the embedded workspace trace'
+    value: ${{ steps.horizon.outputs.trace-commits }}
+  attributed-commits:
+    description: 'Commits attributed to decisions'
+    value: ${{ steps.horizon.outputs.attributed-commits }}
+  unattributed-commits:
+    description: 'Commits not attributed to decisions'
+    value: ${{ steps.horizon.outputs.unattributed-commits }}
+runs:
+  using: composite
+  steps:
+    - name: Set up Bun
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: latest
+    - name: Install Horizon Ledger
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: bun install --frozen-lockfile
+    - name: Export Horizon release audit
+      id: horizon
+      shell: bash
+      env:
+        BASE_SHA: ${{ inputs.base-sha }}
+        HEAD_SHA: ${{ inputs.head-sha }}
+        ROOT: ${{ inputs.root }}
+        ACTION_PATH: ${{ github.action_path }}
+      run: |
+        set -euo pipefail
+        AUDIT_OUT="${RUNNER_TEMP}/horizon-release-audit.json"
+        bun run "$ACTION_PATH/../../../src/cli/index.ts" workspace release export \
+          --base "$BASE_SHA" \
+          --head "$HEAD_SHA" \
+          --root "$ROOT" \
+          --out "$AUDIT_OUT"
+
+        summary="$(node -e "
+          const audit = require(process.argv[1]);
+          const p = audit.statement.predicate;
+          console.log('# Horizon release audit');
+          console.log('');
+          console.log('- Release audit id: \`' + audit.releaseAuditId + '\`');
+          console.log('- Workspace pack id: \`' + p.packId + '\`');
+          console.log('- Gate report id: \`' + p.gateReportId + '\`');
+          console.log('- Verdict: **' + p.gateVerdict.toUpperCase() + '**');
+          console.log('- Coverage: ' + p.coverage.governed + ' governed, ' + p.coverage.unguarded + ' unguarded');
+          console.log('- Changed paths: ' + p.context.changedFiles.length);
+          console.log('- Commits: ' + p.trace.commits + ' (' + p.trace.attributedCommits + ' attributed)');
+        " "$AUDIT_OUT")"
+        printf '%s\n' "$summary" >> "$GITHUB_STEP_SUMMARY"
+
+        values="$(node -e "
+          const audit = require(process.argv[1]);
+          const p = audit.statement.predicate;
+          console.log('release-audit=' + process.argv[1]);
+          console.log('release-audit-id=' + audit.releaseAuditId);
+          console.log('pack-id=' + p.packId);
+          console.log('gate-report-id=' + p.gateReportId);
+          console.log('gate-verdict=' + p.gateVerdict);
+          console.log('trace-commits=' + p.trace.commits);
+          console.log('attributed-commits=' + p.trace.attributedCommits);
+          console.log('unattributed-commits=' + p.trace.unattributedCommits);
+        " "$AUDIT_OUT")"
+        echo "$values" >> "$GITHUB_OUTPUT"
+    - name: Upload Horizon release audit
+      if: ${{ inputs.artifact == 'true' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ steps.horizon.outputs.release-audit }}
+        if-no-files-found: error
+        retention-days: ${{ inputs.artifact-retention-days }}

@@ -1,15 +1,28 @@
+# Changelog
+
+## 0.29.0
+
+- Added a reusable Horizon Release Audit GitHub Action.
+- Release audit CI runs expose artifact path, audit id, gate verdict, and trace counts.
+
+## 0.28.0
+
+- Added `horizon workspace release export`, `inspect`, and `verify`.
+- Added a self-contained in-toto release audit with a workspace decision pack, hash-bound policy gate report, and root-provenance commit trace.
+- Added read-only `horizon_workspace_release_export`, `horizon_workspace_release_inspect`, and `horizon_workspace_release_verify` MCP tools.
+
 ## 0.27.0
 
 - Added `horizon workspace trace` and the read-only `horizon_workspace_trace` MCP tool.
 - Added root-provenance attribution across monorepo workspace roots.
 - Trace reports now classify commits by attached evidence, commit-message reference, and scope match.
+
 ## 0.26.0
 
 - Added `horizon trace` and the read-only `horizon_trace` MCP tool.
 - Added commit attribution by decision scope, commit-message reference, and attached commit evidence.
 - Added `requireEvidence: attributed` for policies that require implementation commits, not just any existing commit.
 - Added stable SARIF reporting for missing attributed evidence.
-# Changelog
 
 ## 0.25.0
 
@@ -118,7 +131,6 @@
 - Added horizon pr-context for deterministic pull request context.
 - Added a reusable GitHub Action that comments with decisions for changed files.
 
-
 - Added deterministic decision context bundles for files and text queries.
 - Added `horizon context` CLI and `horizon_context` MCP read tool.
 
@@ -178,5 +190,4 @@
 ## 0.1.0
 
 - Initial local-first decision ledger CLI and core.
-
 

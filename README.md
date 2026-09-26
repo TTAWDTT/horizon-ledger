@@ -176,7 +176,7 @@ Read-only is the default. To allow decision capture, use `horizon mcp --write`.
 - token-budgeted decision context packs and PR context (shipped)
 - cross-root workspace commit traceability (shipped)
 - portable workspace packs and decision evidence packages (shipped)
-- self-contained in-toto release audits with commit traceability (shipped)
+- self-contained in-toto release audits and CI release-audit artifacts (shipped)
 
 ## Why open source
 
@@ -214,6 +214,17 @@ To retain the decisions and gate verdict as one artifact, add the evidence Actio
 
 ```yaml
 - uses: TTAWDTT/horizon-ledger/.github/actions/evidence@main
+  with:
+    base-sha: ${{ github.event.pull_request.base.sha }}
+    head-sha: ${{ github.event.pull_request.head.sha }}
+    root: .
+    artifact: true
+```
+
+To retain decisions, the gate verdict, and commit attribution as one release artifact, add the release-audit Action:
+
+```yaml
+- uses: TTAWDTT/horizon-ledger/.github/actions/release-audit@main
   with:
     base-sha: ${{ github.event.pull_request.base.sha }}
     head-sha: ${{ github.event.pull_request.head.sha }}
