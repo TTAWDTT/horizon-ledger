@@ -64,6 +64,8 @@ horizon web
 
 ## Multi-root workspaces
 
+See [docs/PACKS.md](docs/PACKS.md) for the deterministic pack format.
+
 ```bash
 horizon workspace init
 horizon workspace add ../another-repo --name another-repo
