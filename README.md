@@ -37,12 +37,23 @@ npm install horizon-ledger
 ## Quickstart
 
 ```bash
-bun run dev init
-bun run dev add --title "Use SQLite for local storage"
-bun run dev list
-bun run dev search sqlite
-bun run dev graph
-bun run dev validate
+horizon init
+horizon add --title "Use SQLite for local storage" --summary "SQLite is simple and portable."
+horizon list
+horizon show D-0001
+horizon update D-0001 --status decided
+horizon evidence D-0001 --type link --value https://sqlite.org --note "SQLite docs" --strength strong
+horizon search sqlite
+horizon why sqlite
+horizon score
+horizon validate
+horizon graph
+```
+
+To use it with an MCP-compatible coding agent:
+
+```bash
+horizon mcp
 ```
 
 ## What you get
@@ -62,9 +73,9 @@ bun run dev validate
 
 ## Roadmap
 
-- CLI and Markdown ledger (this commit)
+- CLI and Markdown ledger (shipped)
+- MCP server for coding agents (started)
 - local web viewer
-- MCP server for coding agents
 - GitHub Action and PR integration
 - evidence scoring and conflict detection
 - sync protocol and team mode

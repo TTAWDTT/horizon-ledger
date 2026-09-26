@@ -12,6 +12,7 @@ import {
   scoreDecision,
 } from '../core';
 import { initLedger } from '../core/ledger';
+import { startMcpServer } from '../mcp';
 
 const program = new Command();
 
@@ -69,6 +70,38 @@ program
   });
 
 program
+  .command('update <id>')
+  .description('Update fields on an existing decision')
+  .option('-t, --title <title>', 'new title')
+  .option('-s, --status <status>', 'new status')
+  .option('-a, --summary <summary>', 'new summary')
+  .option('-x, --context <context>', 'new context')
+  .option('-d, --decision <decision>', 'new decision')
+  .option('-f, --consequences <consequences>', 'new consequences')
+  .option('--tag <tag>', 'tag (repeatable)', (v: string, prev: string[]) => [...(prev ?? []), v], [])
+  .option('--scope <scope>', 'scope (repeatable)', (v: string, prev: string[]) => [...(prev ?? []), v], [])
+  .option('-r, --root <path>', 'project root', '.')
+  .action(async (id: string, options) => {
+    const root = path.resolve(options.root ?? '.');
+    const updated = await updateDecision(root, id, {
+      title: options.title,
+      status: options.status,
+      summary: options.summary,
+      context: options.context,
+      decision: options.decision,
+      consequences: options.consequences,
+      tags: options.tag,
+      scope: options.scope,
+    });
+    if (!updated) {
+      console.error(`Decision not found: ${id}`);
+      process.exitCode = 1;
+      return;
+    }
+    console.log(`Updated decision ${updated.id}`);
+  });
+
+program
   .command('list')
   .description('List decisions')
   .option('-r, --root <path>', 'project root', '.')
@@ -84,6 +117,38 @@ program
     for (const d of filtered) {
       const score = scoreDecision(d);
       console.log(`${d.id}\t${d.status}\t${score.score}/${score.total}\t${d.title}`);
+    }
+  });
+
+
+
+program
+  .command('why <query>')
+  .description('Answer "why" questions by searching the decision ledger')
+  .option('-r, --root <path>', 'project root', '.')
+  .option('-n, --limit <limit>', 'max results', '3')
+  .action(async (query: string, options) => {
+    const root = path.resolve(options.root ?? '.');
+    const ledger = await readLedger(root);
+    const hits = searchLedger(ledger, query).slice(0, Number(options.limit) || 3);
+    for (const hit of hits) {
+      const d = hit.decision;
+      console.log(d.id + ' ' + d.title);
+      console.log('  ' + (d.decision || d.summary || 'No decision text'));
+      console.log('  score=' + scoreDecision(d).score + '/' + scoreDecision(d).total + ' ' + hit.reason);
+    }
+  });
+
+program
+  .command('score')
+  .description('Show evidence scores for each decision')
+  .option('-r, --root <path>', 'project root', '.')
+  .action(async (options) => {
+    const root = path.resolve(options.root ?? '.');
+    const ledger = await readLedger(root);
+    for (const d of ledger) {
+      const score = scoreDecision(d);
+      console.log(d.id + '	' + score.score + '/' + score.total + '	' + d.title);
     }
   });
 
@@ -133,6 +198,7 @@ program
   .command('validate')
   .description('Validate all decisions')
   .option('-r, --root <path>', 'project root', '.')
+  .option('--strict', 'fail on any diagnostic, including warnings')
   .action(async (options) => {
     const root = path.resolve(options.root ?? '.');
     const ledger = await readLedger(root);
@@ -144,7 +210,8 @@ program
     for (const diag of diagnostics) {
       console.log(`${diag.level.toUpperCase()}\t${diag.id ?? '-'}\t${diag.message}`);
     }
-    if (diagnostics.some((d) => d.level === 'error')) process.exitCode = 1;
+    const shouldFail = diagnostics.some((d) => d.level === 'error') || (options.strict && diagnostics.length > 0);
+    if (shouldFail) process.exitCode = 1;
   });
 
 program
@@ -174,6 +241,15 @@ program
       return;
     }
     console.log(`Added evidence to ${updated.id}`);
+  });
+
+program
+  .command('mcp')
+  .description('Run the Model Context Protocol server on stdio')
+  .option('-r, --root <path>', 'project root', '.')
+  .action(async (options) => {
+    const root = path.resolve(options.root ?? '.');
+    await startMcpServer(root);
   });
 
 program.parseAsync(process.argv);
