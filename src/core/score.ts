@@ -41,5 +41,5 @@ export function scoreDecision(d: Decision): ScoreResult {
     score += 1;
     reasons.push('confidence');
   }
-  return { total: 10, score, reasons };
+  return { total: 11, score, reasons };
 }

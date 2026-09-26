@@ -55,7 +55,6 @@ horizon graph
 horizon export --format markdown --out DECISIONS.md
 horizon doctor
 horizon web
-horizon mcp
 ```
 
 To run a local decision dashboard:
@@ -73,11 +72,13 @@ Then open [http://127.0.0.1:4173](http://127.0.0.1:4173). The viewer includes:
 
 The viewer is served on `127.0.0.1`, uses no remote assets, and reads from the Git-native files on every request.
 
-To use it with an MCP-compatible coding agent:
+To expose the ledger to an MCP-compatible coding agent:
 
 ```bash
 horizon mcp
 ```
+
+Read-only is the default. To allow decision capture, use `horizon mcp --write`.
 
 ## What you get
 

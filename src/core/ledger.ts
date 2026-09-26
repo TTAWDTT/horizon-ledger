@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { parseFrontMatter, encodeFrontMatter } from './frontmatter';
-import type { Decision, DecisionLink, DecisionStatus, Evidence } from './types';
-import { slugify, nextId, newEvidenceId } from './utils';
+import type { Alternative, Decision, DecisionLink, DecisionStatus, Evidence } from './types';
+import { slugify, nextId, newEvidenceId, newAlternativeId } from './utils';
 
 export interface LedgerConfig {
   version: number;
@@ -132,6 +132,19 @@ export async function addLink(root: string, id: string, link: DecisionLink): Pro
     return found;
   }
   const updated = { ...found, links: [...(found.links ?? []), link], updatedAt: new Date().toISOString() };
+  const file = await decisionFilePath(root, found.id);
+  const content = encodeFrontMatter(toFront(updated), renderBody(updated));
+  await fs.writeFile(file, content, 'utf8');
+  return updated;
+}
+
+export async function addAlternative(root: string, id: string, input: Omit<Alternative, 'id'>): Promise<Decision | undefined> {
+  const all = await readLedger(root);
+  const found = all.find((d) => d.id === id);
+  if (!found) return undefined;
+  const alternatives = found.alternatives ?? [];
+  const newAlternative: Alternative = { ...input, id: newAlternativeId(alternatives) };
+  const updated = { ...found, alternatives: [...alternatives, newAlternative], updatedAt: new Date().toISOString() };
   const file = await decisionFilePath(root, found.id);
   const content = encodeFrontMatter(toFront(updated), renderBody(updated));
   await fs.writeFile(file, content, 'utf8');

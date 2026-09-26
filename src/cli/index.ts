@@ -24,7 +24,7 @@ const program = new Command();
 program
   .name('horizon')
   .description('Local-first decision ledger for humans and AI agents.')
-  .version('0.3.0');
+  .version('0.4.0');
 
 program
   .command('init')
@@ -363,9 +363,10 @@ program
   .command('mcp')
   .description('Run the Model Context Protocol server on stdio')
   .option('-r, --root <path>', 'project root', '.')
+  .option('--write', 'enable decision capture and update tools')
   .action(async (options) => {
     const root = path.resolve(options.root ?? '.');
-    await startMcpServer(root);
+    await startMcpServer(root, { write: options.write });
   });
 
 program.parseAsync(process.argv);

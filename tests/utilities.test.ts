@@ -20,13 +20,15 @@ describe('horizon ledger utilities', () => {
       evidence: [{ id: 'E-001', type: 'link', value: 'https://example.com', strength: 'strong' }],
       scope: ['src/core'],
       tags: ['storage'],
+      confidence: 'high',
     } as any;
 
     const graph = buildGraph([decision]);
     expect(graph.nodes.length).toBe(3);
     expect(graph.edges.length).toBe(2);
     const score = scoreDecision(decision);
-    expect(score.score).toBeGreaterThan(5);
+    expect(score.score).toBe(11);
+    expect(score.total).toBe(11);
     expect(searchLedger([decision], 'sqlite').length).toBe(1);
     expect(decisionsForFile([decision], 'src/core/storage.ts').length).toBe(1);
     expect(validateLedger([decision]).some((d) => d.level === 'error')).toBe(false);

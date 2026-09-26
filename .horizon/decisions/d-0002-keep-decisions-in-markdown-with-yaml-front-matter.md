@@ -14,7 +14,11 @@ tags:
 links:
   - id: D-0001
     type: supersedes
-alternatives: []
+alternatives:
+  - id: A-001
+    name: JSON-only decision store
+    verdict: rejected
+    reason: Reviewers lose the readable, diffable Markdown workflow.
 evidence:
   - type: link
     value: docs/FORMAT.md

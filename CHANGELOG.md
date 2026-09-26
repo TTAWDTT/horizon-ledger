@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0
+
+- Added opt-in MCP write tools for decision capture and updates.
+- Enforced alternatives and evidence-aware decision capture in MCP writes.
+- Kept the default MCP server read-only for safety.
+
 ## 0.3.0
 
 - Rebuilt the local web viewer as a decision dashboard.

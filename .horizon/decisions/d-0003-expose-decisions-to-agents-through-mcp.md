@@ -13,7 +13,11 @@ tags:
   - agents
   - mcp
 links: []
-alternatives: []
+alternatives:
+  - id: A-001
+    name: Direct file search by each agent
+    verdict: rejected
+    reason: Every agent would need custom parsing and the context would remain inconsistent.
 evidence:
   - type: file
     value: src/mcp/index.ts
