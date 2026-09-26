@@ -27,6 +27,7 @@ horizon workspace init
 horizon workspace add ../another-repo --name another-repo
 horizon workspace list
 horizon workspace validate
+horizon workspace audit
 horizon workspace context storage
 ```
 
@@ -75,4 +76,4 @@ A workspace aggregates decisions from several Horizon roots without copying or c
 }
 ```
 
-Use it when a decision spans a monorepo package, service, client, or infrastructure repository. `workspace context` preserves the root name and path as provenance, while `workspace validate` checks every enabled root as one graph. Duplicate decision IDs, contradictory alternatives, dangling relationships, and unreadable roots are reported together.
+Use it when a decision spans a monorepo package, service, client, or infrastructure repository. `workspace context` preserves the root name and path as provenance, while `workspace validate` checks every enabled root as one graph. Duplicate decision IDs, contradictory alternatives, dangling relationships, unreadable roots, and missing local evidence are reported together. `workspace audit` resolves local paths and Git commits inside each root instead of using the workspace root as a blanket target.

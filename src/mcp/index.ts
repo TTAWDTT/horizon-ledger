@@ -12,6 +12,7 @@ import {
   auditLedger,
   buildContextBundle,
   decisionsForFile,
+  auditWorkspace,
   buildWorkspaceContext,
   readWorkspace,
   readWorkspaceLedger,
@@ -162,6 +163,17 @@ export function createMcpServer(rootArg?: string, options: McpServerOptions = {}
     }
   });
 
+  server.registerTool('horizon_workspace_audit', {
+    description: 'Audit evidence targets across all enabled workspace roots',
+    inputSchema: {},
+    annotations: { readOnlyHint: true },
+  }, async () => {
+    try {
+      return jsonResult(await auditWorkspace(root));
+    } catch {
+      return workspaceNotFound(root);
+    }
+  });
   server.registerTool('horizon_validate', {
     description: 'Validate the ledger and return diagnostics',
     inputSchema: {},

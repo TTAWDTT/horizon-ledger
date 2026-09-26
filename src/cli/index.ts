@@ -22,6 +22,7 @@ import {
   exportLedger,
   exportMarkdown,
   addWorkspaceRoot,
+  auditWorkspace,
   buildWorkspaceContext,
   initWorkspace,
   readWorkspace,
@@ -503,6 +504,27 @@ workspace
     }
   });
 
+workspace
+  .command('audit')
+  .description('Verify evidence in all enabled workspace roots')
+  .option('-r, --root <path>', 'workspace root', '.')
+  .action(async (options: { root?: string }) => {
+    const root = path.resolve(options.root ?? '.');
+    try {
+      const audit = await auditWorkspace(root);
+      console.log(`${audit.name}: verified=${audit.verified} missing=${audit.missing} external=${audit.external} unverifiable=${audit.unverifiable}`);
+      for (const finding of audit.findings) {
+        console.log(`${finding.status.toUpperCase()}\t${finding.rootName}\t${finding.decisionId}\t${finding.evidenceId}\t${finding.message}`);
+      }
+      for (const diagnostic of audit.diagnostics) {
+        console.log(`${diagnostic.level.toUpperCase()}\t${diagnostic.rootName ?? '-'}\t${diagnostic.id ?? '-'}\t${diagnostic.message}`);
+      }
+      if (!audit.ok) process.exitCode = 1;
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  });
 workspace
   .command('context <query>')
   .description('Build deterministic decision context across workspace roots')

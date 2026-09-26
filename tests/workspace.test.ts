@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   addWorkspaceRoot,
+  auditWorkspace,
   buildWorkspaceContext,
   createDecision,
   initLedger,
@@ -34,7 +35,7 @@ describe('horizon workspace', () => {
       consequences: 'No hosted dependency.',
       scope: ['core/storage'],
       alternatives: [{ id: 'A-001', name: 'Postgres', verdict: 'rejected', reason: 'Too heavy locally.' }],
-      evidence: [{ id: 'E-001', type: 'file', value: 'src/core/index.ts', strength: 'strong' }],
+      evidence: [{ id: 'E-001', type: 'file', value: 'evidence.md', strength: 'strong' }],
     });
     await createDecision(second, {
       id: 'D-0002',
@@ -45,7 +46,7 @@ describe('horizon workspace', () => {
       consequences: 'Auditors can verify provenance.',
       scope: ['tools/evidence'],
       alternatives: [{ id: 'A-001', name: 'Remote database', verdict: 'rejected', reason: 'Weak provenance.' }],
-      evidence: [{ id: 'E-001', type: 'file', value: 'src/core/workspace.ts', strength: 'moderate' }],
+      evidence: [{ id: 'E-001', type: 'file', value: 'evidence.md', strength: 'moderate' }],
     });
 
     await initWorkspace(workspaceRoot);
@@ -64,6 +65,13 @@ describe('horizon workspace', () => {
     expect(context.decisions.map((hit) => hit.decision.id)).toContain('D-0001');
     expect(context.decisions.every((hit) => hit.rootName.length > 0)).toBe(true);
     expect(workspaceContextMarkdown(context)).toContain('[first] D-0001');
+
+    await fs.writeFile(path.join(first, 'evidence.md'), '# first evidence');
+    await fs.writeFile(path.join(second, 'evidence.md'), '# second evidence');
+    const audit = await auditWorkspace(workspaceRoot);
+    expect(audit.decisions).toBe(2);
+    expect(audit.verified).toBe(2);
+    expect(audit.ok).toBe(true);
 
     const validation = await validateWorkspace(workspaceRoot);
     expect(validation.decisions).toBe(2);

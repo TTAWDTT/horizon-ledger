@@ -6,6 +6,7 @@ import { validateLedger, type Diagnostic } from './validate';
 import { scoreDecision } from './score';
 import { findConflicts, type ConflictDiagnostic } from './conflicts';
 import { searchLedger } from './search';
+import { auditLedger, type EvidenceAudit } from './audit';
 
 export interface WorkspaceRootConfig {
   id: string;
@@ -68,6 +69,24 @@ export interface WorkspaceContext {
   diagnostics: WorkspaceDiagnostic[];
 }
 
+export interface WorkspaceAuditFinding extends EvidenceAudit {
+  rootId: string;
+  rootName: string;
+  rootPath: string;
+}
+
+export interface WorkspaceAudit {
+  name: string;
+  roots: WorkspaceRootSummary[];
+  decisions: number;
+  verified: number;
+  missing: number;
+  external: number;
+  unverifiable: number;
+  findings: WorkspaceAuditFinding[];
+  diagnostics: WorkspaceDiagnostic[];
+  ok: boolean;
+}
 export interface WorkspaceValidation {
   name: string;
   roots: WorkspaceRootSummary[];
@@ -310,6 +329,53 @@ export async function buildWorkspaceContext(
   };
 }
 
+export async function auditWorkspace(
+  root: string,
+  config?: WorkspaceConfig,
+): Promise<WorkspaceAudit> {
+  const workspace = config ?? await readWorkspace(root);
+  if (!workspace) throw new Error(`No Horizon workspace found at ${path.resolve(root)}`);
+
+  const entries = await readWorkspaceLedger(root, workspace);
+  const diagnostics = await workspaceDiagnostics(root, entries, workspace);
+  const findings: WorkspaceAuditFinding[] = [];
+  let verified = 0;
+  let missing = 0;
+  let external = 0;
+  let unverifiable = 0;
+
+  for (const workspaceRoot of workspace.roots) {
+    if (workspaceRoot.enabled === false) continue;
+    const rootEntries = entries.filter((entry) => entry.rootId === workspaceRoot.id);
+    const resolvedRoot = path.resolve(root, workspaceRoot.path);
+    const audit = await auditLedger(rootEntries.map((entry) => entry.decision), resolvedRoot);
+    verified += audit.verified;
+    missing += audit.missing;
+    external += audit.external;
+    unverifiable += audit.unverifiable;
+    for (const finding of audit.findings) {
+      findings.push({
+        ...finding,
+        rootId: workspaceRoot.id,
+        rootName: workspaceRoot.name,
+        rootPath: workspaceRoot.path,
+      });
+    }
+  }
+
+  return {
+    name: workspace.name,
+    roots: workspaceRootSummaries(workspace, entries),
+    decisions: entries.length,
+    verified,
+    missing,
+    external,
+    unverifiable,
+    findings,
+    diagnostics,
+    ok: missing === 0 && !diagnostics.some((diagnostic) => diagnostic.level === 'error'),
+  };
+}
 export async function validateWorkspace(
   root: string,
   config?: WorkspaceConfig,

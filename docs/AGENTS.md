@@ -38,7 +38,7 @@ The server is read-only by default. Add `--write` only when you want the agent t
 - `horizon_conflicts`
 - `horizon_audit`
 - `horizon_workspace_list` — show root provenance and counts across a workspace
-- `horizon_workspace_context` — search decisions across enabled roots with root metadata
+- `horizon_workspace_audit` — audit evidence with root provenance`n- `horizon_workspace_context` — search decisions across enabled roots with root metadata
 - `horizon_workspace_validate` — validate workspace roots and cross-root conflicts
 - `horizon_context`
 

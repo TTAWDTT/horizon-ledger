@@ -68,10 +68,11 @@ horizon workspace init
 horizon workspace add ../another-repo --name another-repo
 horizon workspace list
 horizon workspace validate
+horizon workspace audit
 horizon workspace context storage
 ```
 
-The MCP server also exposes read-only `horizon_workspace_list`, `horizon_workspace_context`, and `horizon_workspace_validate` tools, so coding agents can query cross-root decisions without a cloud service.
+The MCP server also exposes read-only `horizon_workspace_list`, `horizon_workspace_audit`, `horizon_workspace_context`, and `horizon_workspace_validate` tools, so coding agents can query cross-root decisions without a cloud service.
 
 To run a local decision dashboard:
 

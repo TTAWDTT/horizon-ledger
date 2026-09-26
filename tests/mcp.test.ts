@@ -43,6 +43,8 @@ describe('MCP server', () => {
 
       await initLedger(root);
       await initWorkspace(root);
+      await fs.mkdir(path.join(root, 'src', 'core'), { recursive: true });
+      await fs.writeFile(path.join(root, 'src', 'core', 'index.ts'), 'export {};');
       const created = await createDecision(root, {
         title: 'Use SQLite for workspace storage',
         summary: 'SQLite keeps local data portable.',
@@ -63,6 +65,9 @@ describe('MCP server', () => {
         arguments: { query: 'SQLite' },
       }));
       expect(context.decisions[0].decision.id).toBe(created.id);
+
+      const audit = parseResult(await client.callTool({ name: 'horizon_workspace_audit', arguments: {} }));
+      expect(audit.verified).toBe(1);
 
       const validation = parseResult(await client.callTool({ name: 'horizon_workspace_validate', arguments: {} }));
       expect(validation.decisions).toBe(1);
