@@ -2,7 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod/v4';
 import path from 'node:path';
-import { readLedger, searchLedger, buildGraph, scoreDecision, validateLedger } from '../core';
+import { readLedger, searchLedger, buildGraph, scoreDecision, validateLedger, decisionsForFile } from '../core';
 
 function text(value: unknown) {
   return [{ type: 'text' as const, text: JSON.stringify(value, null, 2) }];
@@ -48,7 +48,17 @@ export async function startMcpServer(rootArg?: string): Promise<void> {
     return { content: text(graph) };
   });
 
-  server.registerTool('horizon_score', {
+  
+  server.registerTool('horizon_scope', {
+    description: 'Find decisions that affect a file or directory',
+    inputSchema: { path: z.string().describe('File or directory path') },
+  }, async ({ path: filePath }: { path: string }) => {
+    const ledger = await readLedger(root);
+    const relevant = decisionsForFile(ledger, filePath);
+    return { content: text(relevant) };
+  });
+
+server.registerTool('horizon_score', {
     description: 'Score how well each decision is evidenced',
     inputSchema: {},
   }, async () => {

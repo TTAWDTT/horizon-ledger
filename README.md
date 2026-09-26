@@ -45,7 +45,7 @@ horizon update D-0001 --status decided
 horizon evidence D-0001 --type link --value https://sqlite.org --note "SQLite docs" --strength strong
 horizon search sqlite
 horizon why sqlite
-horizon score
+horizon scope src/corehorizon score
 horizon validate
 horizon graph
 ```
@@ -93,4 +93,5 @@ Horizon Ledger is open source under MIT. The project will be developed and itera
 ## Contributing
 
 Issues and pull requests are welcome. Please keep changes small and evidence-focused.
+
 

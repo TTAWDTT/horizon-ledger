@@ -10,6 +10,7 @@ import {
   searchLedger,
   buildGraph,
   scoreDecision,
+  decisionsForFile,
 } from '../core';
 import { initLedger } from '../core/ledger';
 import { startMcpServer } from '../mcp';
@@ -122,6 +123,25 @@ program
   });
 
 
+
+
+program
+  .command('scope <path>')
+  .description('Show decisions that affect a file or directory')
+  .option('-r, --root <path>', 'project root', '.')
+  .action(async (filePath: string, options) => {
+    const root = path.resolve(options.root ?? '.');
+    const ledger = await readLedger(root);
+    const relevant = decisionsForFile(ledger, filePath);
+    if (!relevant.length) {
+      console.log('No decisions found for ' + filePath);
+      return;
+    }
+    for (const d of relevant) {
+      console.log(d.id + '	' + d.title);
+      console.log('  ' + (d.decision || d.summary || 'No decision text'));
+    }
+  });
 
 program
   .command('why <query>')
