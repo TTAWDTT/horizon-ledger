@@ -11,9 +11,13 @@ inputs:
     description: 'Pull request head SHA or ref'
     required: true
   root:
-    description: 'Repository root containing .horizon'
+    description: 'Repository root containing .horizon or workspace'
     required: false
     default: '.'
+  workspace:
+    description: 'Use Horizon workspace aggregation for monorepo roots'
+    required: false
+    default: 'false'
   token:
     description: 'GitHub token used for optional PR comment'
     required: false
@@ -44,7 +48,11 @@ runs:
       run: |
         set -euo pipefail
         OUT="${RUNNER_TEMP}/horizon-pr-context.md"
-        bun run "$ACTION_PATH/src/cli/index.ts" pr-context --base "$BASE_SHA" --head "$HEAD_SHA" --root "$ROOT" --out "$OUT"
+        if [[ "${{ inputs.workspace }}" == "true" ]]; then
+          bun run "$ACTION_PATH/src/cli/index.ts" workspace pr-context --base "$BASE_SHA" --head "$HEAD_SHA" --root "$ROOT" --out "$OUT"
+        else
+          bun run "$ACTION_PATH/src/cli/index.ts" pr-context --base "$BASE_SHA" --head "$HEAD_SHA" --root "$ROOT" --out "$OUT"
+        fi
         cat "$OUT" >> "$GITHUB_STEP_SUMMARY"
         echo "file=$OUT" >> "$GITHUB_OUTPUT"
     - name: Update PR comment

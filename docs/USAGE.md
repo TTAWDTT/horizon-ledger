@@ -78,3 +78,17 @@ A workspace aggregates decisions from several Horizon roots without copying or c
 ```
 
 Use it when a decision spans a monorepo package, service, client, or infrastructure repository. `workspace context` preserves the root name and path as provenance, while `workspace validate` checks every enabled root as one graph. Duplicate decision IDs, contradictory alternatives, dangling relationships, unreadable roots, and missing local evidence are reported together. `workspace audit` resolves local paths and Git commits inside each root instead of using the workspace root as a blanket target.
+
+### Workspace PR action
+
+```yaml
+- uses: TTAWDTT/horizon-ledger/.github/actions/pr-context@main
+  with:
+    base-sha: ${{ github.event.pull_request.base.sha }}
+    head-sha: ${{ github.event.pull_request.head.sha }}
+    root: .
+    workspace: true
+    comment: true
+```
+
+Use `workspace: true` when `.horizon/workspace.json` describes packages inside one monorepo checkout.
