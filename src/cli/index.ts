@@ -9,6 +9,7 @@ import {
   addLink,
   validateLedger,
   findConflicts,
+  importAdrDirectory,
   searchLedger,
   buildGraph,
   scoreDecision,
@@ -25,7 +26,7 @@ const program = new Command();
 program
   .name('horizon')
   .description('Local-first decision ledger for humans and AI agents.')
-  .version('0.5.0');
+  .version('0.6.0');
 
 program
   .command('init')
@@ -315,6 +316,21 @@ program
       console.log(`${conflict.level.toUpperCase()}\t${conflict.kind}\t${conflict.id ?? "-"}${conflict.related.length ? " -> " + conflict.related.join(",") : ""}\t${conflict.message}`);
     }
     if (conflicts.some((item) => item.level === 'error')) process.exitCode = 1;
+  });
+
+program
+  .command('import-adr <source-dir>')
+  .description('Import existing ADR Markdown files into the Horizon ledger')
+  .option('-s, --status <status>', 'override imported status')
+  .option('--dry-run', 'preview without writing decisions')
+  .option('-r, --root <path>', 'project root', '.')
+  .action(async (source: string, options) => {
+    const root = path.resolve(options.root ?? '.');
+    const report = await importAdrDirectory(root, path.resolve(source), { dryRun: options.dryRun, status: options.status });
+    console.log(`Scanned ${report.scanned}, created ${report.created}, skipped ${report.skipped}.`);
+    for (const item of report.results) {
+      console.log(`${item.action}\t${item.id ?? "-"}\t${item.title}\t${item.file}${item.reason ? " (" + item.reason + ")" : ""}`);
+    }
   });
 
 program

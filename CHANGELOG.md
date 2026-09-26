@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.0
+
+- Added a safe ADR Markdown importer with dry-run, evidence preservation, alternatives, and skip-on-repeat.
+
 ## 0.5.0
 
 - Added deterministic conflict detection for accepted and rejected alternatives in overlapping scopes.

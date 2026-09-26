@@ -41,3 +41,12 @@ The dashboard exposes a local-only API at `/api/ledger` and includes the ledger,
 ```
 
 Set `strict: false` to allow warnings while still catching errors.
+
+## Import existing ADRs
+
+```bash
+horizon import-adr docs/adr --dry-run
+horizon import-adr docs/adr
+```
+
+The importer creates a Horizon decision from the ADR title, status, context, decision, consequences, considered options, and links. It preserves the original Markdown as evidence and skips files that were already imported.
