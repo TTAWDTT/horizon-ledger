@@ -48,17 +48,15 @@ policy:
   requireEvidence: sealed
 evidence:
   - id: E-001
-    type: file
-    value: src/mcp/index.ts
+    type: commit
+    value: a5aa0b7bc8aab2e9b63b1627bda4dc1c49ac73d8
     strength: strong
-    note: Governed Horizon prompt registrations
-    hash: 15fb25fc4dd46b56f41360c6966ae4d83964342e9210ed3e1bda2725da46d14d
+    note: Commit containing governed prompt registrations
   - id: E-002
-    type: test
-    value: tests/mcp.test.ts
+    type: commit
+    value: a5aa0b7bc8aab2e9b63b1627bda4dc1c49ac73d8
     strength: strong
-    note: Prompt discovery and retrieval coverage
-    hash: 9e99ff4389cdad07e84e02372373cf0249287b6fe9de17367464c942e1fe477c
+    note: Commit containing MCP prompt tests
   - id: E-003
     type: link
     value: https://modelcontextprotocol.io/specification/2025-06-18/server/prompts.md

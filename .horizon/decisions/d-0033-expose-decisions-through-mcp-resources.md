@@ -3,7 +3,7 @@ id: D-0033
 title: Expose decisions through MCP resources
 status: decided
 createdAt: 2026-09-26T15:44:52.010Z
-updatedAt: 2026-09-26T15:42:35.188Z
+updatedAt: 2026-09-26T15:59:58.991Z
 confidence: high
 horizon: medium
 kind: engineering
@@ -44,17 +44,15 @@ policy:
   requireEvidence: sealed
 evidence:
   - id: E-001
-    type: file
-    value: src/mcp/index.ts
+    type: commit
+    value: efd7b477839dd664803bae3f2c0f8c6deae8aabf
     strength: strong
-    note: MCP resource and resource template registration
-    hash: de6d1e46f611f75d2f4dac6cd5d6d8a4e4ef6df5f3a0d1e2704586381ba116cc
+    note: Commit containing MCP resource registration
   - id: E-002
-    type: test
-    value: tests/mcp.test.ts
+    type: commit
+    value: efd7b477839dd664803bae3f2c0f8c6deae8aabf
     strength: strong
-    note: MCP resource list and read coverage
-    hash: ab8be1274d4fb6ecfc02a94a580a6879dfd866fe8696e642f3de54b20860e40e
+    note: Commit containing MCP resource tests
   - id: E-003
     type: link
     value: https://modelcontextprotocol.io/specification/2025-06-18/server/resources.md

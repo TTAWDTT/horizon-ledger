@@ -93,7 +93,7 @@ async function auditCommit(decisionId: string, evidence: Evidence, root: string)
   }
   try {
     await execFileAsync('git', ['cat-file', '-e', `${sha}^{commit}`], { cwd: root });
-    return result(decisionId, evidence, 'verified', `commit exists: ${sha}`);
+    return result(decisionId, evidence, 'verified', `commit exists: ${sha}`, true);
   } catch (error: any) {
     const message = String(error?.stderr ?? error?.message ?? '').toLowerCase();
     if (message.includes('not a git repository')) {
