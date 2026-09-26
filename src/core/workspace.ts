@@ -2,6 +2,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { Decision } from './types';
 import { readLedger } from './ledger';
+import { decisionsForFile } from './relevance';
+import { listChangedFiles } from './pr-context';
 import { validateLedger, type Diagnostic } from './validate';
 import { scoreDecision } from './score';
 import { findConflicts, type ConflictDiagnostic } from './conflicts';
@@ -75,6 +77,35 @@ export interface WorkspaceAuditFinding extends EvidenceAudit {
   rootPath: string;
 }
 
+export interface WorkspacePullRequestDecision {
+  rootId: string;
+  rootName: string;
+  rootPath: string;
+  decision: Decision;
+}
+
+export interface WorkspacePullRequestAuditFinding extends EvidenceAudit {
+  rootId: string;
+  rootName: string;
+}
+
+export interface WorkspacePullRequestContext {
+  version: 1;
+  root: string;
+  base: string;
+  head: string;
+  files: string[];
+  decisions: WorkspacePullRequestDecision[];
+  conflicts: ReturnType<typeof findConflicts>;
+  audit: {
+    verified: number;
+    missing: number;
+    external: number;
+    unverifiable: number;
+    findings: WorkspacePullRequestAuditFinding[];
+  };
+  diagnostics: WorkspaceDiagnostic[];
+}
 export interface WorkspaceAudit {
   name: string;
   roots: WorkspaceRootSummary[];
@@ -375,6 +406,135 @@ export async function auditWorkspace(
     diagnostics,
     ok: missing === 0 && !diagnostics.some((diagnostic) => diagnostic.level === 'error'),
   };
+}
+function decisionRootPath(file: string, rootPath: string): string | undefined {
+  const normalized = rootPath.replace(/\\/g, '/').replace(/\/+$/, '');
+  if (normalized === '.' || normalized === '') return file;
+  const prefix = `${normalized}/`;
+  return file.startsWith(prefix) ? file.slice(prefix.length) : undefined;
+}
+
+export async function buildWorkspacePullRequestContext(
+  root: string,
+  base: string,
+  head: string,
+  files?: string[],
+): Promise<WorkspacePullRequestContext> {
+  const workspaceRoot = path.resolve(root);
+  const workspace = await readWorkspace(workspaceRoot);
+  if (!workspace) throw new Error(`No Horizon workspace found at ${workspaceRoot}`);
+
+  const changed = files ?? await listChangedFiles(workspaceRoot, base, head);
+  const entries = await readWorkspaceLedger(workspaceRoot, workspace);
+  const decisions: WorkspacePullRequestDecision[] = [];
+  const auditFindings: WorkspacePullRequestAuditFinding[] = [];
+  const diagnostics: WorkspaceDiagnostic[] = [];
+  let verified = 0;
+  let missing = 0;
+  let external = 0;
+  let unverifiable = 0;
+
+  for (const workspaceRootConfig of workspace.roots) {
+    if (workspaceRootConfig.enabled === false) continue;
+    const relevantFiles = changed
+      .map((file) => ({ file, relative: decisionRootPath(file, workspaceRootConfig.path) }))
+      .filter((item): item is { file: string; relative: string } => item.relative !== undefined);
+    if (!relevantFiles.length) continue;
+
+    const rootEntries = entries.filter((entry) => entry.rootId === workspaceRootConfig.id);
+    const byId = new Map<string, Decision>();
+    for (const item of relevantFiles) {
+      for (const decision of decisionsForFile(rootEntries.map((entry) => entry.decision), item.relative)) {
+        byId.set(decision.id, decision);
+      }
+    }
+    const unique = [...byId.values()];
+    for (const decision of unique) {
+      decisions.push({
+        rootId: workspaceRootConfig.id,
+        rootName: workspaceRootConfig.name,
+        rootPath: workspaceRootConfig.path,
+        decision,
+      });
+    }
+
+    const resolvedRoot = path.resolve(root, workspaceRootConfig.path);
+    const audit = await auditLedger(unique, resolvedRoot);
+    verified += audit.verified;
+    missing += audit.missing;
+    external += audit.external;
+    unverifiable += audit.unverifiable;
+    for (const finding of audit.findings) {
+      auditFindings.push({ ...finding, rootId: workspaceRootConfig.id, rootName: workspaceRootConfig.name });
+    }
+
+    for (const diagnostic of validateLedger(unique)) {
+      if (diagnostic.kind) continue;
+      diagnostics.push({
+        rootId: workspaceRootConfig.id,
+        rootName: workspaceRootConfig.name,
+        level: diagnostic.level,
+        id: diagnostic.id,
+        message: diagnostic.message,
+      });
+    }
+  }
+
+  return {
+    version: 1,
+    root: workspaceRoot,
+    base,
+    head,
+    files: changed,
+    decisions,
+    conflicts: findConflicts(decisions.map((item) => item.decision)),
+    audit: { verified, missing, external, unverifiable, findings: auditFindings },
+    diagnostics,
+  };
+}
+
+export function workspacePullRequestContextMarkdown(context: WorkspacePullRequestContext): string {
+  const lines: string[] = [
+    '## Horizon workspace decision context',
+    '',
+    `Changed paths: ${context.files.length ? context.files.map((file) => '`' + file + '`').join(', ') : '_none_'}`,
+    '',
+  ];
+
+  if (!context.decisions.length) {
+    lines.push('No recorded workspace decisions apply to the changed files.', '');
+    return lines.join('\n');
+  }
+
+  for (const item of context.decisions) {
+    const score = scoreDecision(item.decision);
+    lines.push(
+      `### [${item.rootName}] ${item.decision.id}: ${item.decision.title}`,
+      '',
+      `Status: **${item.decision.status}**`,
+      `Quality: ${score.score}/${score.total}`,
+      '',
+    );
+    if (item.decision.summary) lines.push(item.decision.summary.trim(), '');
+    if (item.decision.decision) lines.push(`**Decision**: ${item.decision.decision.trim()}`, '');
+    if (item.decision.consequences) lines.push(`**Consequences**: ${item.decision.consequences.trim()}`, '');
+  }
+
+  if (context.conflicts.length) {
+    lines.push('### Workspace conflicts', '');
+    for (const conflict of context.conflicts) lines.push(`- ${conflict.level.toUpperCase()}: ${conflict.message}`);
+    lines.push('');
+  }
+
+  if (context.audit.missing) {
+    lines.push('### Missing workspace evidence', '');
+    for (const finding of context.audit.findings.filter((item) => item.status === 'missing')) {
+      lines.push(`- [${finding.rootName}] ${finding.decisionId}/${finding.evidenceId}: ${finding.message}`);
+    }
+    lines.push('');
+  }
+
+  return lines.join('\n');
 }
 export async function validateWorkspace(
   root: string,

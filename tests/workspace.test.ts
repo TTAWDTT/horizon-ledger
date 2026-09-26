@@ -6,6 +6,7 @@ import {
   addWorkspaceRoot,
   auditWorkspace,
   buildWorkspaceContext,
+  buildWorkspacePullRequestContext,
   createDecision,
   initLedger,
   initWorkspace,
@@ -13,6 +14,7 @@ import {
   readWorkspaceLedger,
   validateWorkspace,
   workspaceContextMarkdown,
+  workspacePullRequestContextMarkdown,
   workspaceSummary,
 } from '../src/core';
 
@@ -78,6 +80,49 @@ describe('horizon workspace', () => {
     expect(validation.diagnostics.some((diagnostic) => diagnostic.level === 'error')).toBe(false);
   });
 
+  it('maps pull request files to workspace root decisions', async () => {
+    const workspaceRoot = await makeRoot();
+    const apiRoot = path.join(workspaceRoot, 'packages', 'api');
+    const webRoot = path.join(workspaceRoot, 'packages', 'web');
+    await initLedger(apiRoot);
+    await initLedger(webRoot);
+
+    await createDecision(apiRoot, {
+      title: 'Use SQLite in API',
+      summary: 'API storage uses SQLite.',
+      context: 'The API needs local-first storage.',
+      decision: 'Use SQLite.',
+      consequences: 'The API remains portable.',
+      scope: ['src'],
+      alternatives: [{ id: 'A-001', name: 'Postgres', verdict: 'rejected', reason: 'Too heavy.' }],
+      evidence: [{ id: 'E-001', type: 'file', value: 'src', strength: 'strong' }],
+    });
+    await createDecision(webRoot, {
+      id: 'D-0002',
+      title: 'Use server components',
+      summary: 'Server components reduce client JavaScript.',
+      context: 'The web app needs fast initial rendering.',
+      decision: 'Use server components.',
+      consequences: 'Some interactions need client components.',
+      scope: ['app'],
+      alternatives: [{ id: 'A-001', name: 'SPA', verdict: 'rejected', reason: 'Larger bundle.' }],
+      evidence: [{ id: 'E-001', type: 'file', value: 'app', strength: 'strong' }],
+    });
+
+    await initWorkspace(workspaceRoot);
+    await addWorkspaceRoot(workspaceRoot, apiRoot, 'api');
+    await addWorkspaceRoot(workspaceRoot, webRoot, 'web');
+
+    const context = await buildWorkspacePullRequestContext(workspaceRoot, 'main', 'HEAD', [
+      'packages/api/src/storage.ts',
+      'packages/web/app/page.tsx',
+      'README.md',
+    ]);
+    expect(context.decisions.map((item) => item.rootName).sort()).toEqual(['api', 'web']);
+    expect(context.decisions.map((item) => item.decision.id).sort()).toEqual(['D-0001', 'D-0002']);
+    expect(workspacePullRequestContextMarkdown(context)).toContain('[api] D-0001');
+    expect(workspacePullRequestContextMarkdown(context)).toContain('[web] D-0002');
+  });
   it('detects duplicate IDs and contradictory verdicts across roots', async () => {
     const first = await makeRoot();
     const second = await makeRoot();

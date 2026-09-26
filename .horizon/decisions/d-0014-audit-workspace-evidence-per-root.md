@@ -3,7 +3,7 @@ id: D-0014
 title: Audit workspace evidence per root
 status: decided
 createdAt: 2026-09-26T11:56:55.275Z
-updatedAt: 2026-09-26T11:56:56.298Z
+updatedAt: 2026-09-26T12:03:54.879Z
 confidence: high
 horizon: medium
 kind: engineering
@@ -37,6 +37,11 @@ evidence:
     note: Workspace audit tests
     strength: strong
     id: E-002
+  - type: file
+    value: src/core/pr-context.ts
+    note: Reuses changed-file context primitives
+    strength: moderate
+    id: E-003
 ---
 
 ## Summary

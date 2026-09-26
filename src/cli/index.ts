@@ -24,11 +24,13 @@ import {
   addWorkspaceRoot,
   auditWorkspace,
   buildWorkspaceContext,
+  buildWorkspacePullRequestContext,
   initWorkspace,
   readWorkspace,
   readWorkspaceLedger,
   validateWorkspace,
   workspaceContextMarkdown,
+  workspacePullRequestContextMarkdown,
   workspaceSummary,
 } from '../core';
 import { initLedger } from '../core/ledger';
@@ -542,6 +544,38 @@ workspace
       if (outPath) {
         await import('node:fs/promises').then((fs) => fs.writeFile(outPath, payload, 'utf8'));
         console.log('Wrote ' + options.out);
+      } else {
+        console.log(payload);
+      }
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  });
+workspace
+  .command('pr-context')
+  .description('Build decision context for changed files across monorepo roots')
+  .option('-b, --base <sha>', 'base ref or sha')
+  .option('-h, --head <sha>', 'head ref or sha', 'HEAD')
+  .option('-f, --format <format>', 'json | markdown', 'markdown')
+  .option('-o, --out <path>', 'write to a file instead of stdout')
+  .option('-r, --root <path>', 'workspace root', '.')
+  .action(async (options: { base?: string; head?: string; format?: string; out?: string; root?: string }) => {
+    const root = path.resolve(options.root ?? '.');
+    if (!options.base) {
+      console.error('A base ref is required.');
+      process.exitCode = 1;
+      return;
+    }
+    try {
+      const context = await buildWorkspacePullRequestContext(root, options.base, options.head ?? 'HEAD');
+      const payload = options.format === 'json'
+        ? JSON.stringify(context, null, 2)
+        : workspacePullRequestContextMarkdown(context);
+      const outPath = options.out;
+      if (outPath) {
+        await import('node:fs/promises').then((fs) => fs.writeFile(outPath, payload, 'utf8'));
+        console.log('Wrote ' + outPath);
       } else {
         console.log(payload);
       }

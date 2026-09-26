@@ -24,7 +24,7 @@ export interface PullRequestContext {
 }
 
 
-async function listChangedFiles(root: string, base: string, head: string): Promise<string[]> {
+export async function listChangedFiles(root: string, base: string, head: string): Promise<string[]> {
   const { stdout } = await execFileAsync('git', ['diff', '--name-only', `${base}...${head}`], { cwd: root });
   return stdout.split('\n').map((line) => line.trim()).filter(Boolean);
 }export async function buildPullRequestContext(
