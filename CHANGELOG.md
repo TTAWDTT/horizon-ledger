@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.11.0
 
 - Added strict workspace config validation for duplicate IDs, duplicate names, duplicate resolved paths, unsafe metadata paths, and invalid enabled values.
 - Added `horizon workspace remove`, `enable`, and `disable` for explicit local root management.

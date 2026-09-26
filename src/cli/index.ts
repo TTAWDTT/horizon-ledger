@@ -48,7 +48,7 @@ const program = new Command();
 program
   .name('horizon')
   .description('Local-first decision ledger for humans and AI agents.')
-  .version('0.10.0');
+  .version('0.11.0');
 
 program
   .command('init')
