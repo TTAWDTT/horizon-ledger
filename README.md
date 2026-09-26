@@ -31,13 +31,13 @@ Horizon Ledger keeps decisions **close to code**, in Markdown + structured front
 Install the latest tagged Git release:
 
 ```bash
-bun add github:TTAWDTT/horizon-ledger#v0.18.0
+bun add github:TTAWDTT/horizon-ledger#v0.24.0
 ```
 
 or
 
 ```bash
-npm install github:TTAWDTT/horizon-ledger#v0.18.0
+npm install github:TTAWDTT/horizon-ledger#v0.24.0
 ```
 
 ## Quickstart
