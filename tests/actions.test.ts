@@ -16,4 +16,11 @@ describe('composite actions', () => {
       expect(content).not.toContain('"$ACTION_PATH/src/cli/index.ts"');
     }
   });
+
+  it('supports hash-bound gate reports and artifact upload', async () => {
+    const content = await fs.readFile(path.join(process.cwd(), '.github/actions/gate/action.yml'), 'utf8');
+    expect(content).toContain('--report');
+    expect(content).toContain('report-id');
+    expect(content).toContain('actions/upload-artifact@v4');
+  });
 });

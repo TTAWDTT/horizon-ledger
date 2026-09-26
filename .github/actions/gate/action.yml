@@ -20,6 +20,29 @@ inputs:
     description: 'Use workspace roots for monorepo path mapping'
     required: false
     default: 'false'
+  report:
+    description: 'Write a hash-bound JSON gate report'
+    required: false
+    default: 'false'
+  artifact:
+    description: 'Upload the JSON gate report as a workflow artifact'
+    required: false
+    default: 'false'
+  artifact-name:
+    description: 'Name for the uploaded gate report artifact'
+    required: false
+    default: 'horizon-policy-gate-report'
+  artifact-retention-days:
+    description: 'Retention days for the uploaded gate report artifact'
+    required: false
+    default: '30'
+outputs:
+  report:
+    description: 'Path to the generated JSON gate report'
+    value: ${{ steps.horizon.outputs.report }}
+  report-id:
+    description: 'Canonical SHA-256 report id'
+    value: ${{ steps.horizon.outputs.report-id }}
 runs:
   using: composite
   steps:
@@ -42,12 +65,30 @@ runs:
       run: |
         set -uo pipefail
         OUT="${RUNNER_TEMP}/horizon-policy-gate.md"
+        REPORT_OUT=""
+        REPORT_ARGS=()
+        if [[ "${{ inputs.report }}" == "true" || "${{ inputs.artifact }}" == "true" ]]; then
+          REPORT_OUT="${RUNNER_TEMP}/horizon-policy-gate-report.json"
+          REPORT_ARGS=(--report "$REPORT_OUT")
+        fi
         if [[ "${{ inputs.workspace }}" == "true" ]]; then
-          bun run "$ACTION_PATH/../../../src/cli/index.ts" workspace gate --base "$BASE_SHA" --head "$HEAD_SHA" --root "$ROOT" --out "$OUT"
+          bun run "$ACTION_PATH/../../../src/cli/index.ts" workspace gate --base "$BASE_SHA" --head "$HEAD_SHA" --root "$ROOT" --out "$OUT" "${REPORT_ARGS[@]}"
         else
-          bun run "$ACTION_PATH/../../../src/cli/index.ts" gate --base "$BASE_SHA" --head "$HEAD_SHA" --root "$ROOT" --out "$OUT"
+          bun run "$ACTION_PATH/../../../src/cli/index.ts" gate --base "$BASE_SHA" --head "$HEAD_SHA" --root "$ROOT" --out "$OUT" "${REPORT_ARGS[@]}"
         fi
         status=$?
         cat "$OUT" >> "$GITHUB_STEP_SUMMARY"
-        echo "file=$OUT" >> "$GITHUB_OUTPUT"
+        if [[ -n "$REPORT_OUT" ]]; then
+          REPORT_ID="$(node -e "const report = require(process.argv[1]); process.stdout.write(report.reportId)" "$REPORT_OUT")"
+          echo "report=$REPORT_OUT" >> "$GITHUB_OUTPUT"
+          echo "report-id=$REPORT_ID" >> "$GITHUB_OUTPUT"
+        fi
         exit $status
+    - name: Upload Horizon policy gate report
+      if: ${{ inputs.artifact == 'true' && steps.horizon.outputs.report != '' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ steps.horizon.outputs.report }}
+        if-no-files-found: error
+        retention-days: ${{ inputs.artifact-retention-days }}

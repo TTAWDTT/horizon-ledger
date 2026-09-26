@@ -31,13 +31,13 @@ Horizon Ledger keeps decisions **close to code**, in Markdown + structured front
 Install the latest tagged Git release:
 
 ```bash
-bun add github:TTAWDTT/horizon-ledger#v0.17.0
+bun add github:TTAWDTT/horizon-ledger#v0.18.0
 ```
 
 or
 
 ```bash
-npm install github:TTAWDTT/horizon-ledger#v0.17.0
+npm install github:TTAWDTT/horizon-ledger#v0.18.0
 ```
 
 ## Quickstart
@@ -123,7 +123,7 @@ Read-only is the default. To allow decision capture, use `horizon mcp --write`.
 - structured alternatives, evidence, provenance, and optional sha256 seals
 - graph, search, scoring, cross-repository workspaces, and portable packs
 - a local-only human dashboard with no telemetry
-- optional sha256 evidence seals that fail on silent content drift
+- optional sha256 evidence seals and hash-bound gate reports
 - useful for humans, coding agents, and opt-in CI gates
 - no vendor lock-in, no hosted database, no LLM required
 
@@ -142,7 +142,7 @@ Read-only is the default. To allow decision capture, use `horizon mcp --write`.
 - GitHub Action validation (shipped)
 - cross-repository workspace aggregation (shipped)
 - ADR import (shipped)
-- policy/evidence change gates with optional sha256 seals (shipped)
+- policy/evidence change gates, sha256 seals, and hash-bound reports (shipped)
 - decision context bundles and PR context (shipped)
 - portable workspace packs (export/inspect/import planning/apply shipped), then richer sync
 
@@ -175,4 +175,5 @@ To enforce opt-in policies, add the gate Action:
     base-sha: ${{ github.event.pull_request.base.sha }}
     head-sha: ${{ github.event.pull_request.head.sha }}
     root: .
+    artifact: true
 ```

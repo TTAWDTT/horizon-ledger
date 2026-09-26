@@ -16,3 +16,4 @@ export * from './pr-context';
 export * from './workspace';
 export * from './pack';
 export * from './policy';
+export * from './report';

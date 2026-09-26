@@ -33,6 +33,8 @@ import {
   buildWorkspaceContext,
   buildWorkspacePullRequestContext,
   buildWorkspaceChangeGate,
+  createGateReport,
+  parseGateReport,
   getWorkspaceDecision,
   exportWorkspace,
   exportWorkspacePack,
@@ -55,6 +57,17 @@ import {
 import { initLedger } from '../core/ledger';
 import { startMcpServer } from '../mcp';
 import { startLedgerServer } from '../web/server';
+
+async function writeGateReport(
+  filePath: string,
+  gate: unknown,
+  context: { root: string; base?: string; head?: string; workspace?: boolean },
+): Promise<void> {
+  const report = createGateReport({ ...context, gate });
+  const fs = await import('node:fs/promises');
+  await fs.writeFile(filePath, JSON.stringify(report, null, 2) + '\n', 'utf8');
+  console.log(`Report ${report.reportId} -> ${filePath}`);
+}
 
 const program = new Command();
 
@@ -422,8 +435,9 @@ program
   .option('--file <path>', 'changed path (repeatable)', (v: string, prev: string[]) => [...(prev ?? []), v], [])
   .option('-f, --format <format>', 'json | markdown', 'markdown')
   .option('-o, --out <path>', 'write to a file instead of stdout')
+  .option('--report <path>', 'write a hash-bound JSON report')
   .option('-r, --root <path>', 'project root', '.')
-  .action(async (options: { base?: string; head?: string; file?: string[]; format?: string; out?: string; root?: string }) => {
+  .action(async (options: { base?: string; head?: string; file?: string[]; format?: string; out?: string; report?: string; root?: string }) => {
     const root = path.resolve(options.root ?? '.');
     try {
       const files = options.file?.length ? options.file : undefined;
@@ -438,7 +452,31 @@ program
       } else {
         console.log(payload);
       }
+      if (options.report) await writeGateReport(options.report, gate, { root, base: options.base, head: options.head });
       if (gate.verdict === 'block') process.exitCode = 1;
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  });
+
+program
+  .command('report <file>')
+  .description('Verify a hash-bound Horizon policy gate report')
+  .option('-f, --format <format>', 'summary | json', 'summary')
+  .action(async (file: string, options: { format?: string }) => {
+    try {
+      const fs = await import('node:fs/promises');
+      const raw = await fs.readFile(file, 'utf8');
+      const report = parseGateReport(raw);
+      if (options.format === 'json') {
+        console.log(JSON.stringify(report, null, 2));
+      } else {
+        const gate = report.gate as { verdict?: string };
+        console.log(`Report ${report.reportId}`);
+        console.log(`Gate digest ${report.gateDigest}`);
+        console.log(`Verdict ${gate.verdict ?? 'unknown'}`);
+      }
     } catch (error) {
       console.error(error instanceof Error ? error.message : String(error));
       process.exitCode = 1;
@@ -554,8 +592,9 @@ workspace
   .option('--file <path>', 'changed path (repeatable)', (v: string, prev: string[]) => [...(prev ?? []), v], [])
   .option('-f, --format <format>', 'json | markdown', 'markdown')
   .option('-o, --out <path>', 'write to a file instead of stdout')
+  .option('--report <path>', 'write a hash-bound JSON report')
   .option('-r, --root <path>', 'workspace root', '.')
-  .action(async (options: { base?: string; head?: string; file?: string[]; format?: string; out?: string; root?: string }) => {
+  .action(async (options: { base?: string; head?: string; file?: string[]; format?: string; out?: string; report?: string; root?: string }) => {
     const root = path.resolve(options.root ?? '.');
     try {
       const files = options.file?.length ? options.file : undefined;
@@ -570,6 +609,7 @@ workspace
       } else {
         console.log(payload);
       }
+      if (options.report) await writeGateReport(options.report, gate, { root, base: options.base, head: options.head, workspace: true });
       if (gate.verdict === 'block') process.exitCode = 1;
     } catch (error) {
       console.error(error instanceof Error ? error.message : String(error));

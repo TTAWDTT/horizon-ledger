@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.18.0
+
+- Added hash-bound JSON policy gate reports with canonical SHA-256 report IDs.
+- Added `horizon gate --report`, `horizon workspace gate --report`, and `horizon report <file>`.
+- Added reusable Action report and artifact upload options.
+
 ## 0.17.0
 
 - Added `requireEvidence: sealed` for hash-bound evidence gates.

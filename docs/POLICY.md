@@ -34,6 +34,21 @@ A blocking decision must be `decided` and have the requested evidence. Missing e
 
 Agents can call `horizon_gate` with changed paths or a base/head range. It is read-only and returns structured findings, so a host can decide whether to warn, stop, or continue with human review. With MCP writes enabled, `horizon_create` and `horizon_update` can set the same policy field.
 
+## Reports
+
+Both gate commands can write a hash-bound JSON report:
+
+```bash
+horizon gate --base main --head HEAD --report horizon-gate.json
+horizon workspace gate --base main --head HEAD --report horizon-gate.json
+horizon report horizon-gate.json
+```
+
+The report includes a canonical SHA-256 `gateDigest` for the gate payload and a `reportId` for the whole report. `horizon report` verifies both values and fails if the artifact was edited.
+
+In CI, set `artifact: true` on the gate Action to upload the JSON report. The Action exposes the path and report id as outputs.
+
+
 ## Workspaces
 
 For a monorepo, run the workspace gate instead. It maps repository-relative paths to each enabled root and reports violations with root provenance:

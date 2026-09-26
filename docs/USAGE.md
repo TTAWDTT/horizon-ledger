@@ -20,6 +20,8 @@ horizon audit
 horizon pr-context --base main --head HEAD
 horizon graph
 horizon gate --base main --head HEAD
+horizon gate --base main --head HEAD --report horizon-gate.json
+horizon report horizon-gate.json
 horizon export --format markdown --out DECISIONS.md
 horizon doctor
 horizon web
