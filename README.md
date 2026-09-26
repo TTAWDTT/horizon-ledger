@@ -40,17 +40,38 @@ npm install horizon-ledger
 ## Quickstart
 
 ```bash
-horizon init --mcphorizon add --title "Use SQLite for local storage" --summary "SQLite is simple and portable."
+horizon init --mcp
+horizon add --title "Use SQLite for local storage" --summary "SQLite is simple and portable."
 horizon list
 horizon show D-0001
 horizon update D-0001 --status decided
 horizon evidence D-0001 --type link --value https://sqlite.org --note "SQLite docs" --strength strong
 horizon search sqlite
 horizon why sqlite
-horizon scope src/corehorizon score
+horizon scope src/core
+horizon score
 horizon validate
 horizon graph
-horizon export --format markdown --out DECISIONS.md```
+horizon export --format markdown --out DECISIONS.md
+horizon doctor
+horizon web
+horizon mcp
+```
+
+To run a local decision dashboard:
+
+```bash
+horizon web --port 4173
+```
+
+Then open [http://127.0.0.1:4173](http://127.0.0.1:4173). The viewer includes:
+
+- a status and quality board
+- alternatives, evidence, links, scope, tags, and diagnostics
+- a local decision/evidence graph
+- search over decisions, evidence, alternatives, and scope
+
+The viewer is served on `127.0.0.1`, uses no remote assets, and reads from the Git-native files on every request.
 
 To use it with an MCP-compatible coding agent:
 
@@ -58,17 +79,12 @@ To use it with an MCP-compatible coding agent:
 horizon mcp
 ```
 
-To run a local web viewer:
-
-```bash
-horizon doctor
-horizon web```
-
 ## What you get
 
 - local-first, Git-friendly Markdown decisions
 - structured alternatives, evidence, and provenance
 - graph + search + simple evidence scoring
+- a local-only human dashboard with no telemetry
 - useful for humans, coding agents, and future CI gates
 - no vendor lock-in, no hosted database, no LLM required
 
@@ -83,7 +99,7 @@ horizon web```
 
 - CLI and Markdown ledger (shipped)
 - MCP server for coding agents (started)
-- local web viewer
+- local web dashboard (shipped)
 - GitHub Action and PR integration
 - evidence scoring and conflict detection
 - sync protocol and team mode
@@ -95,10 +111,3 @@ Horizon Ledger is open source under MIT. The project will be developed and itera
 ## Contributing
 
 Issues and pull requests are welcome. Please keep changes small and evidence-focused.
-
-
-
-
-
-
-

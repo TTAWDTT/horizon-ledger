@@ -16,8 +16,16 @@ horizon validate
 horizon graph
 horizon export --format markdown --out DECISIONS.md
 horizon doctor
-horizon webhorizon mcp
+horizon web
+horizon mcp
 ```
 
 Use `--root <path>` to run against another repository.
 
+## Web dashboard
+
+```bash
+horizon web --port 4173
+```
+
+The dashboard exposes a local-only API at `/api/ledger` and includes the ledger, scores, graph, and diagnostics. It intentionally has no remote dependencies, so private decision context stays on your machine.

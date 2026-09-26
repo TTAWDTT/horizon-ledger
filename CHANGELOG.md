@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.0
+
+- Rebuilt the local web viewer as a decision dashboard.
+- Added local board view with status, quality, scope, and tags.
+- Added detailed alternatives, evidence, links, diagnostics, and quality reasons.
+- Added a dependency-free decision/evidence graph view.
+- Added structured `/api/ledger` metadata, scores, stats, and health endpoint.
+
+## 0.2.4
+
+- Synced the CLI version with the package.
+
 ## 0.2.3
 
 - Added JSON and Markdown ledger export.
