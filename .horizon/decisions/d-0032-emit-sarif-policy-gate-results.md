@@ -3,7 +3,7 @@ id: D-0032
 title: Emit SARIF policy gate reports
 status: decided
 createdAt: 2026-09-26T15:39:18.764Z
-updatedAt: 2026-09-26T15:39:42.431Z
+updatedAt: 2026-09-27T00:53:00.000Z
 confidence: high
 horizon: medium
 kind: engineering
@@ -55,11 +55,10 @@ policy:
   requireEvidence: sealed
 evidence:
   - id: E-001
-    type: file
-    value: src/core/sarif.ts
+    type: commit
+    value: 5762a8e3d711036262d24086e67f7735f237b817
     strength: strong
-    note: SARIF producer with stable rule ids and fingerprints
-    hash: b415067bce9bac6060b9b7352e91167a6ba266e18fcf09a98aa59683d6b25955
+    note: SARIF producer and traceability rule update sealed as Git history
   - id: E-002
     type: test
     value: tests/sarif.test.ts
@@ -89,4 +88,5 @@ Add stable Horizon rule ids to gate violations and a SARIF converter for single-
 ## Consequences
 
 Teams can route Horizon findings into existing SARIF tooling while continuing to use the hash-bound Horizon report for evidence and verification.
+
 
