@@ -467,7 +467,7 @@ export async function readWorkspaceLedger(
   return entries;
 }
 
-function workspaceRootSummaries(
+export function workspaceRootSummaries(
   config: WorkspaceConfig,
   entries: WorkspaceDecision[],
 ): WorkspaceRootSummary[] {
@@ -687,7 +687,7 @@ export async function auditWorkspace(
     ok: missing === 0 && !diagnostics.some((diagnostic) => diagnostic.level === 'error'),
   };
 }
-function decisionRootPath(file: string, rootPath: string): string | undefined {
+export function decisionRootPath(file: string, rootPath: string): string | undefined {
   const normalized = rootPath.replace(/\\/g, '/').replace(/\/+$/, '');
   if (normalized === '.' || normalized === '') return file;
   const prefix = `${normalized}/`;
@@ -1102,3 +1102,4 @@ export function workspaceContextMarkdown(context: WorkspaceContext): string {
 
   return lines.join('\n');
 }
+

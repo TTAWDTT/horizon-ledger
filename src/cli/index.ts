@@ -61,7 +61,9 @@ import {
   workspaceChangeGateMarkdown,
   workspaceSummary,
   buildTrace,
+  buildWorkspaceTrace,
   traceMarkdown,
+  workspaceTraceMarkdown,
 } from '../core';
 import { HORIZON_VERSION } from '../version';
 import { initLedger } from '../core/ledger';
@@ -839,6 +841,25 @@ workspace
     }
   });
 workspace
+  .command('trace')
+  .description('Trace workspace commits back to decisions with root provenance')
+  .option('-b, --base <ref>', 'base ref or sha', 'HEAD~1')
+  .option('-h, --head <ref>', 'head ref or sha', 'HEAD')
+  .option('--decision <id>', 'trace one decision id across workspace roots')
+  .option('-f, --format <format>', 'json | markdown', 'markdown')
+  .option('-r, --root <path>', 'workspace root', '.')
+  .action(async (options: { base?: string; head?: string; decision?: string; format?: string; root?: string }) => {
+    const root = path.resolve(options.root ?? '.');
+    try {
+      const report = await buildWorkspaceTrace(root, options.base ?? 'HEAD~1', options.head ?? 'HEAD', { decisionId: options.decision });
+      const payload = options.format === 'json' ? JSON.stringify(report, null, 2) : workspaceTraceMarkdown(report);
+      console.log(payload);
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  });
+workspace
   .command('export')
   .description('Export workspace decisions, provenance, conflicts, and audit findings')
   .option('-f, --format <format>', 'json | markdown', 'json')
@@ -1063,4 +1084,6 @@ program
   });
 
 program.parseAsync(process.argv);
+
+
 

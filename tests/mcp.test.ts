@@ -30,6 +30,7 @@ describe('MCP server', () => {
     expect(names).toContain('horizon_audit');
     expect(names).toContain('horizon_context');
     expect(names).toContain('horizon_trace');
+    expect(names).toContain('horizon_workspace_trace');
     expect(names).not.toContain('horizon_create');
     await readonly.close();
   });
@@ -281,4 +282,5 @@ describe('MCP server', () => {
     }
   });
 });
+
 

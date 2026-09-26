@@ -47,6 +47,7 @@ horizon workspace evidence export --base main --head HEAD --out EVIDENCE-PACK.js
 horizon workspace evidence inspect EVIDENCE-PACK.json
 horizon workspace evidence verify EVIDENCE-PACK.json --expect-verdict pass
 horizon workspace context storage --max-tokens 2000
+horizon workspace trace --base main --head HEAD
 ```
 
 Use `--root <path>` to run against another repository.
@@ -119,4 +120,5 @@ For a monorepo workspace, use the same action with workspace aggregation:
     strict: true
     workspace: true
 ```
+
 

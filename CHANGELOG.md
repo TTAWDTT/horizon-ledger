@@ -1,3 +1,8 @@
+## 0.27.0
+
+- Added `horizon workspace trace` and the read-only `horizon_workspace_trace` MCP tool.
+- Added root-provenance attribution across monorepo workspace roots.
+- Trace reports now classify commits by attached evidence, commit-message reference, and scope match.
 ## 0.26.0
 
 - Added `horizon trace` and the read-only `horizon_trace` MCP tool.
@@ -173,4 +178,5 @@
 ## 0.1.0
 
 - Initial local-first decision ledger CLI and core.
+
 

@@ -25,6 +25,7 @@ import {
   planWorkspacePackImport,
   workspaceSummary,
   buildTrace,
+  buildWorkspaceTrace,
   createDecision,
   sealEvidence,
   updateDecision,
@@ -498,6 +499,25 @@ export function createMcpServer(rootArg?: string, options: McpServerOptions = {}
     annotations: { readOnlyHint: true },
   }, async () => jsonResult(await auditLedger(await readLedger(root), root)));
 
+  server.registerTool('horizon_workspace_trace', {
+    description: 'Trace workspace commits back to decisions with root provenance',
+    inputSchema: {
+      base: z.string().min(1).describe('Base ref, tag, or SHA'),
+      head: z.string().default('HEAD').describe('Head ref, tag, or SHA'),
+      decisionId: z.string().optional().describe('Optional decision id'),
+      files: z.array(z.string()).optional().describe('Workspace-relative changed paths'),
+    },
+    annotations: { readOnlyHint: true },
+  }, async ({ base, head, decisionId, files }: { base?: string; head?: string; decisionId?: string; files?: string[] }) => {
+    try {
+      return jsonResult(await buildWorkspaceTrace(root, base ?? 'HEAD~1', head ?? 'HEAD', { decisionId, files }));
+    } catch (error) {
+      return {
+        content: [{ type: 'text' as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      };
+    }
+  });
   server.registerTool('horizon_trace', {
     description: 'Trace Git commits in a range back to decisions by evidence, scope, or commit-message reference',
     inputSchema: {
@@ -675,5 +695,7 @@ export async function startMcpServer(rootArg?: string, options: McpServerOptions
   const root = path.resolve(rootArg ?? process.env.HORIZON_ROOT ?? '.');
   console.error(`Horizon Ledger MCP server running on stdio. Root: ${root}. Write tools: ${options.write || process.env.HORIZON_MCP_WRITE === '1' ? 'enabled' : 'disabled'}`);
 }
+
+
 
 

@@ -31,13 +31,13 @@ Horizon Ledger keeps decisions **close to code**, in Markdown + structured front
 Install the latest tagged Git release:
 
 ```bash
-bun add github:TTAWDTT/horizon-ledger#v0.26.0
+bun add github:TTAWDTT/horizon-ledger#v0.27.0
 ```
 
 or
 
 ```bash
-npm install github:TTAWDTT/horizon-ledger#v0.26.0
+npm install github:TTAWDTT/horizon-ledger#v0.27.0
 ```
 
 ## Quickstart
@@ -80,7 +80,7 @@ horizon trace --base v0.25.0 --head HEAD
 horizon trace --base main --head HEAD --decision D-0001 --format json
 ```
 
-The trace classifies a commit as `evidence` when its SHA is attached, `reference` when the commit message names the decision, and `scope` when it touches the decision scope. The read-only `horizon_trace` MCP tool exposes the same result to agents.
+The trace classifies a commit as `evidence` when its SHA is attached, `reference` when the commit message names the decision, and `scope` when it touches the decision scope. The read-only `horizon_trace` MCP tool exposes the same result to agents. In a monorepo, use `horizon workspace trace` to preserve root provenance.
 
 Use `requireEvidence: attributed` when a policy must be enforced by an implementation commit:
 
@@ -112,12 +112,13 @@ horizon workspace export --format markdown --out WORKSPACE.md
 horizon workspace pack export --out WORKSPACE-PACK.json
 horizon workspace pack import WORKSPACE-PACK.json
 horizon workspace context storage
+horizon workspace trace --base main --head HEAD
 
 horizon workspace evidence export --out EVIDENCE-PACK.json
 horizon workspace evidence verify EVIDENCE-PACK.json --expect-verdict pass
 ```
 
-The MCP server also exposes read-only `horizon_workspace_list`, `horizon_workspace_audit`, `horizon_workspace_context`, `horizon_workspace_validate`, `horizon_workspace_gate`, `horizon_workspace_pack_export`, `horizon_workspace_pack_import_plan`, `horizon_workspace_evidence_export`, and `horizon_workspace_evidence_verify` tools, so coding agents can query cross-root decisions without a cloud service. Workspace packs and evidence packages are deterministic and SHA-256-bound, so you can review, archive, or hand off decisions without a cloud service. Pack import defaults to a read-only plan; add --write to apply it. Workspace configs are validated strictly: duplicate IDs, names, and aliases fail fast instead of silently degrading into a partial graph.
+The MCP server also exposes read-only `horizon_workspace_list`, `horizon_workspace_audit`, `horizon_workspace_context`, `horizon_workspace_validate`, `horizon_workspace_gate`, `horizon_workspace_trace`, `horizon_workspace_pack_export`, `horizon_workspace_pack_import_plan`, `horizon_workspace_evidence_export`, and `horizon_workspace_evidence_verify` tools, so coding agents can query cross-root decisions without a cloud service. Workspace packs and evidence packages are deterministic and SHA-256-bound, so you can review, archive, or hand off decisions without a cloud service. Pack import defaults to a read-only plan; add --write to apply it. Workspace configs are validated strictly: duplicate IDs, names, and aliases fail fast instead of silently degrading into a partial graph.
 
 To run a local decision dashboard:
 
@@ -169,6 +170,7 @@ Read-only is the default. To allow decision capture, use `horizon mcp --write`.
 - ADR import (shipped)
 - policy/evidence change gates, attributed commits, sha256 seals, hash-bound reports, and SARIF output (shipped)
 - token-budgeted decision context packs and PR context (shipped)
+- cross-root workspace commit traceability (shipped)
 - portable workspace packs and decision evidence packages (shipped)
 
 ## Why open source
@@ -213,6 +215,11 @@ To retain the decisions and gate verdict as one artifact, add the evidence Actio
     root: .
     artifact: true
 ```
+
+
+
+
+
 
 
 
