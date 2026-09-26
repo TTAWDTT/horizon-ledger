@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.23.0
+
+- Added SARIF 2.1.0 output for single-root and workspace policy gates.
+- Added stable Horizon rule ids and finding fingerprints to gate violations.
+- Added `--format sarif` to `horizon gate` and `horizon workspace gate`.
+
 ## 0.22.0
 
 - Added approximate token budgets to single-root and workspace context packs.

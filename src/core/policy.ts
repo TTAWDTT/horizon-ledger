@@ -12,6 +12,7 @@ export type GateVerdict = 'pass' | 'warn' | 'block';
 
 export interface GateViolation {
   level: 'error' | 'warn';
+  ruleId?: string;
   decisionId?: string;
   file?: string;
   message: string;
@@ -61,6 +62,7 @@ export async function buildChangeGate(root: string, files: string[]): Promise<Ch
       violations.push({
         level,
         decisionId: decision.id,
+        ruleId: 'horizon/undecided',
         message: `${decision.id} is ${decision.status}, not decided`,
       });
     }
@@ -71,6 +73,7 @@ export async function buildChangeGate(root: string, files: string[]): Promise<Ch
       violations.push({
         level,
         decisionId: decision.id,
+        ruleId: 'horizon/no-attached-evidence',
         message: `${decision.id} has no attached evidence`,
       });
     }
@@ -85,18 +88,21 @@ export async function buildChangeGate(root: string, files: string[]): Promise<Ch
         violations.push({
           level,
           decisionId: decision.id,
+          ruleId: 'horizon/no-strong-evidence',
           message: `${decision.id} has no verified strong evidence`,
         });
       } else if (requireEvidence === 'sealed' && !sealedOk) {
         violations.push({
           level,
           decisionId: decision.id,
+          ruleId: 'horizon/no-sealed-evidence',
           message: `${decision.id} has no sealed evidence`,
         });
       } else if (requireEvidence === 'verified' && !acceptable.length) {
         violations.push({
           level,
           decisionId: decision.id,
+          ruleId: 'horizon/no-verified-evidence',
           message: `${decision.id} has no verified evidence`,
         });
       }
@@ -106,6 +112,7 @@ export async function buildChangeGate(root: string, files: string[]): Promise<Ch
       violations.push({
         level,
         decisionId: decision.id,
+        ruleId: 'horizon/missing-evidence',
         message: `${decision.id} has missing evidence`,
       });
     }
@@ -114,6 +121,7 @@ export async function buildChangeGate(root: string, files: string[]): Promise<Ch
   if (conflicts.some((conflict) => conflict.level === 'error') && unique.some((d) => (d.policy?.mode ?? 'observe') === 'block')) {
     violations.push({
       level: 'error',
+      ruleId: 'horizon/conflicting-decisions',
       message: 'A blocking policy applies while the governed decisions have errors',
     });
   }

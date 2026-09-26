@@ -18,6 +18,7 @@ import {
   buildChangeGate,
   buildPullRequestContext,
   changeGateMarkdown,
+  changeGateSarif,
   pullRequestContextMarkdown,
   searchLedger,
   buildGraph,
@@ -56,6 +57,7 @@ import {
   workspaceContextMarkdown,
   workspaceExportMarkdown,
   workspacePullRequestContextMarkdown,
+  workspaceChangeGateSarif,
   workspaceChangeGateMarkdown,
   workspaceSummary,
 } from '../core';
@@ -440,7 +442,7 @@ program
   .option('-b, --base <sha>', 'base ref or sha')
   .option('-h, --head <sha>', 'head ref or sha', 'HEAD')
   .option('--file <path>', 'changed path (repeatable)', (v: string, prev: string[]) => [...(prev ?? []), v], [])
-  .option('-f, --format <format>', 'json | markdown', 'markdown')
+  .option('-f, --format <format>', 'json | markdown | sarif', 'markdown')
   .option('-o, --out <path>', 'write to a file instead of stdout')
   .option('--report <path>', 'write a hash-bound JSON report')
   .option('-r, --root <path>', 'project root', '.')
@@ -451,7 +453,11 @@ program
       const gate = files
         ? await buildChangeGate(root, files)
         : await buildPullRequestGate(root, options.base ?? 'HEAD~1', options.head ?? 'HEAD', files);
-      const payload = options.format === 'json' ? JSON.stringify(gate, null, 2) : changeGateMarkdown(gate);
+      const payload = options.format === 'json'
+        ? JSON.stringify(gate, null, 2)
+        : options.format === 'sarif'
+          ? JSON.stringify(changeGateSarif(gate), null, 2)
+          : changeGateMarkdown(gate);
       const outPath = options.out;
       if (outPath) {
         await import('node:fs/promises').then((fs) => fs.writeFile(outPath, payload, 'utf8'));

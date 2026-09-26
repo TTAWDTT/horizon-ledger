@@ -126,7 +126,7 @@ Read-only is the default. To allow decision capture, use `horizon mcp --write`.
 - structured alternatives, evidence, provenance, and optional sha256 seals
 - graph, search, scoring, cross-repository workspaces, and portable packs
 - a local-only human dashboard with no telemetry
-- optional sha256 evidence seals, hash-bound gate reports, and portable evidence packages
+- optional sha256 evidence seals, hash-bound gate reports, SARIF output, and portable evidence packages
 - useful for humans, coding agents, and opt-in CI gates
 - no vendor lock-in, no hosted database, no LLM required
 
@@ -145,7 +145,7 @@ Read-only is the default. To allow decision capture, use `horizon mcp --write`.
 - GitHub Action validation (shipped)
 - cross-repository workspace aggregation (shipped)
 - ADR import (shipped)
-- policy/evidence change gates, sha256 seals, and hash-bound reports (shipped)
+- policy/evidence change gates, sha256 seals, hash-bound reports, and SARIF output (shipped)
 - token-budgeted decision context packs and PR context (shipped)
 - portable workspace packs and decision evidence packages (shipped)
 

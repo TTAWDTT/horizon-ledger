@@ -46,6 +46,15 @@ horizon report horizon-gate.json
 
 The report includes a canonical SHA-256 `gateDigest` for the gate payload and a `reportId` for the whole report. `horizon report` verifies both values and fails if the artifact was edited.
 
+For existing security dashboards, emit SARIF instead:
+
+```bash
+horizon gate --base main --head HEAD --format sarif --out horizon.sarif
+horizon workspace gate --base main --head HEAD --format sarif --out horizon-workspace.sarif
+```
+
+SARIF keeps stable Horizon rule ids and finding fingerprints; it complements, not replaces, the hash-bound Horizon report.
+
 In CI, set `artifact: true` on the gate Action to upload the JSON report. The Action exposes the path and report id as outputs.
 
 
