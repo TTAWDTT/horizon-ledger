@@ -86,3 +86,38 @@ Use the reusable Action to publish a PR or release evidence package:
 ```
 
 The Action exposes `evidence-pack`, `evidence-pack-id`, and `gate-verdict` outputs and uploads the JSON package.
+
+# Release audits
+
+An evidence package binds a decision to its policy verdict. A release audit binds the next layer of proof: what changed, which commits implemented it, and which root owned each decision.
+
+```bash
+horizon workspace release export --base main --head HEAD --out RELEASE-AUDIT.json
+horizon workspace release inspect RELEASE-AUDIT.json
+horizon workspace release verify RELEASE-AUDIT.json --expect-verdict pass
+```
+
+## Format
+
+A release audit is a single versioned JSON file with:
+
+- `kind`: `horizon.release-audit`
+- `schemaVersion`: `1`
+- `releaseAuditId`: canonical SHA-256 of the payload excluding the id
+- producer version and creation time
+- three named artifacts:
+  - `decision-pack.json` — the deterministic Horizon workspace pack
+  - `gate-report.json` — the hash-bound Horizon workspace gate report
+  - `commit-trace.json` — the root-provenance workspace commit trace
+- canonical SHA-256 digests for each embedded artifact
+- an [in-toto Statement v1](https://in-toto.io/Statement/v1) subject set and a Horizon release-audit predicate
+
+The statement records the base/head context, changed paths, policy verdict, coverage, workspace summary, pack/report ids, gate digest, and commit trace summary.
+
+## Contract
+
+- Export is read-only and local.
+- Verification re-parses all three embedded artifacts, checks every digest, and checks statement/predicate consistency.
+- `inspect` validates without writing.
+- `verify` can require exact audit, pack, report, digest, verdict, or trace-count values.
+- Like Horizon evidence packages, the Statement is signature-envelope ready for an external DSSE/Sigstore workflow. No signing or network call is required locally.

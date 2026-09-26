@@ -116,9 +116,13 @@ horizon workspace trace --base main --head HEAD
 
 horizon workspace evidence export --out EVIDENCE-PACK.json
 horizon workspace evidence verify EVIDENCE-PACK.json --expect-verdict pass
+
+horizon workspace release export --base main --head HEAD --out RELEASE-AUDIT.json
+horizon workspace release inspect RELEASE-AUDIT.json
+horizon workspace release verify RELEASE-AUDIT.json --expect-verdict pass
 ```
 
-The MCP server also exposes read-only `horizon_workspace_list`, `horizon_workspace_audit`, `horizon_workspace_context`, `horizon_workspace_validate`, `horizon_workspace_gate`, `horizon_workspace_trace`, `horizon_workspace_pack_export`, `horizon_workspace_pack_import_plan`, `horizon_workspace_evidence_export`, and `horizon_workspace_evidence_verify` tools, so coding agents can query cross-root decisions without a cloud service. Workspace packs and evidence packages are deterministic and SHA-256-bound, so you can review, archive, or hand off decisions without a cloud service. Pack import defaults to a read-only plan; add --write to apply it. Workspace configs are validated strictly: duplicate IDs, names, and aliases fail fast instead of silently degrading into a partial graph.
+The MCP server also exposes read-only `horizon_workspace_list`, `horizon_workspace_audit`, `horizon_workspace_context`, `horizon_workspace_validate`, `horizon_workspace_gate`, `horizon_workspace_trace`, `horizon_workspace_pack_export`, `horizon_workspace_pack_import_plan`, `horizon_workspace_evidence_export`, `horizon_workspace_evidence_verify`, `horizon_workspace_release_export`, `horizon_workspace_release_inspect`, and `horizon_workspace_release_verify` tools, so coding agents can query cross-root decisions without a cloud service. Workspace packs, evidence packages, and release audits are deterministic and SHA-256-bound, so you can review, archive, or hand off decisions without a cloud service. Pack import defaults to a read-only plan; add --write to apply it. Workspace configs are validated strictly: duplicate IDs, names, and aliases fail fast instead of silently degrading into a partial graph.
 
 To run a local decision dashboard:
 
@@ -172,6 +176,7 @@ Read-only is the default. To allow decision capture, use `horizon mcp --write`.
 - token-budgeted decision context packs and PR context (shipped)
 - cross-root workspace commit traceability (shipped)
 - portable workspace packs and decision evidence packages (shipped)
+- self-contained in-toto release audits with commit traceability (shipped)
 
 ## Why open source
 

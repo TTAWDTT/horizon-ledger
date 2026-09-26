@@ -64,6 +64,11 @@ import {
   buildWorkspaceTrace,
   traceMarkdown,
   workspaceTraceMarkdown,
+  exportWorkspaceReleaseAudit,
+  inspectWorkspaceReleaseAudit,
+  parseWorkspaceReleaseAudit,
+  verifyWorkspaceReleaseAudit,
+  workspaceReleaseAuditMarkdown,
 } from '../core';
 import { HORIZON_VERSION } from '../version';
 import { initLedger } from '../core/ledger';
@@ -1042,9 +1047,108 @@ workspaceEvidence
       process.exitCode = 1;
     }
   });
+const workspaceRelease = workspace
+  .command('release')
+  .description('Export and verify self-contained release audits');
+
+workspaceRelease
+  .command('export')
+  .description('Export a decision pack, gate report, and commit trace as one in-toto release audit')
+  .option('-b, --base <ref>', 'base ref or sha', 'HEAD~1')
+  .option('-h, --head <ref>', 'head ref or sha', 'HEAD')
+  .option('--file <path>', 'changed path (repeatable)', (v: string, prev: string[]) => [...(prev ?? []), v], [])
+  .option('-f, --format <format>', 'json | markdown', 'json')
+  .option('-o, --out <path>', 'write to a file instead of stdout')
+  .option('-r, --root <path>', 'workspace root', '.')
+  .action(async (options: { base?: string; head?: string; file?: string[]; format?: string; out?: string; root?: string }) => {
+    const root = path.resolve(options.root ?? '.');
+    try {
+      const audit = await exportWorkspaceReleaseAudit(root, {
+        base: options.base,
+        head: options.head,
+        files: options.file?.length ? options.file : undefined,
+      });
+      const payload = options.format === 'markdown'
+        ? workspaceReleaseAuditMarkdown(audit)
+        : JSON.stringify(audit, null, 2);
+      if (options.out) {
+        const fs = await import('node:fs/promises');
+        await fs.writeFile(options.out, payload, 'utf8');
+        console.log(`Release audit ${audit.releaseAuditId} -> ${options.out}`);
+      } else {
+        console.log(payload);
+      }
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  });
+
+workspaceRelease
+  .command('inspect <file>')
+  .description('Validate and summarize a release audit without writing files')
+  .option('-f, --format <format>', 'json | markdown', 'json')
+  .action(async (file: string, options: { format?: string }) => {
+    try {
+      const fs = await import('node:fs/promises');
+      const raw = await fs.readFile(file, 'utf8');
+      console.log(options.format === 'markdown'
+        ? workspaceReleaseAuditMarkdown(parseWorkspaceReleaseAudit(raw))
+        : JSON.stringify(inspectWorkspaceReleaseAudit(raw), null, 2));
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  });
+
+workspaceRelease
+  .command('verify <file>')
+  .description('Verify a release audit and optional embedded artifact expectations')
+  .option('--expect-release-audit-id <id>', 'required release audit id')
+  .option('--expect-pack-id <id>', 'required embedded workspace pack id')
+  .option('--expect-gate-report-id <id>', 'required embedded gate report id')
+  .option('--expect-gate-digest <id>', 'required embedded gate digest')
+  .option('--expect-verdict <verdict>', 'required pass | warn | block')
+  .option('--expect-trace-commits <count>', 'required commit count')
+  .option('--expect-attributed-commits <count>', 'required attributed commit count')
+  .option('--expect-unattributed-commits <count>', 'required unattributed commit count')
+  .option('-f, --format <format>', 'json | markdown', 'json')
+  .action(async (file: string, options: {
+    expectReleaseAuditId?: string;
+    expectPackId?: string;
+    expectGateReportId?: string;
+    expectGateDigest?: string;
+    expectVerdict?: 'pass' | 'warn' | 'block';
+    expectTraceCommits?: string;
+    expectAttributedCommits?: string;
+    expectUnattributedCommits?: string;
+    format?: string;
+  }) => {
+    try {
+      const fs = await import('node:fs/promises');
+      const raw = await fs.readFile(file, 'utf8');
+      const verification = verifyWorkspaceReleaseAudit(raw, {
+        releaseAuditId: options.expectReleaseAuditId,
+        packId: options.expectPackId,
+        gateReportId: options.expectGateReportId,
+        gateDigest: options.expectGateDigest,
+        gateVerdict: options.expectVerdict,
+        traceCommits: options.expectTraceCommits ? Number(options.expectTraceCommits) : undefined,
+        attributedCommits: options.expectAttributedCommits ? Number(options.expectAttributedCommits) : undefined,
+        unattributedCommits: options.expectUnattributedCommits ? Number(options.expectUnattributedCommits) : undefined,
+      });
+      const payload = options.format === 'markdown'
+        ? workspaceReleaseAuditMarkdown(parseWorkspaceReleaseAudit(raw))
+        : JSON.stringify(verification, null, 2);
+      console.log(payload);
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  });
+
 program
   .command('web')
-  .description('Start a local web viewer for the ledger')
   .option('-r, --root <path>', 'project root', '.')
   .option('-p, --port <port>', 'port', '4173')
   .action(async (options) => {

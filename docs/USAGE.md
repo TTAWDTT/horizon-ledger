@@ -48,6 +48,10 @@ horizon workspace evidence inspect EVIDENCE-PACK.json
 horizon workspace evidence verify EVIDENCE-PACK.json --expect-verdict pass
 horizon workspace context storage --max-tokens 2000
 horizon workspace trace --base main --head HEAD
+
+horizon workspace release export --base main --head HEAD --out RELEASE-AUDIT.json
+horizon workspace release inspect RELEASE-AUDIT.json
+horizon workspace release verify RELEASE-AUDIT.json --expect-verdict pass
 ```
 
 Use `--root <path>` to run against another repository.

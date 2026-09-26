@@ -23,3 +23,4 @@ export * from './sarif';
 export * from './commit';
 export * from './trace';
 export * from './workspace-trace';
+export * from './release-audit';

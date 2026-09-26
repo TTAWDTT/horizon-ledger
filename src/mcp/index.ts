@@ -35,6 +35,9 @@ import {
   verifyGateReport,
   exportWorkspaceEvidencePack,
   verifyWorkspaceEvidencePack,
+  exportWorkspaceReleaseAudit,
+  inspectWorkspaceReleaseAudit,
+  verifyWorkspaceReleaseAudit,
   type Decision,
   type DecisionPolicy,
 } from '../core';
@@ -287,6 +290,84 @@ export function createMcpServer(rootArg?: string, options: McpServerOptions = {}
   });
 
 
+
+  server.registerTool('horizon_workspace_release_export', {
+    description: 'Export a self-contained in-toto release audit with decisions, policy gate, and commit trace',
+    inputSchema: {
+      base: z.string().optional().describe('Base ref or sha; defaults to HEAD~1'),
+      head: z.string().optional().describe('Head ref or sha; defaults to HEAD'),
+      files: z.array(z.string()).optional().describe('Changed workspace-relative paths'),
+    },
+    annotations: { readOnlyHint: true },
+  }, async ({ base, head, files }: { base?: string; head?: string; files?: string[] }) => {
+    try {
+      return jsonResult(await exportWorkspaceReleaseAudit(root, { base, head, files }));
+    } catch (error) {
+      return {
+        content: [{ type: 'text' as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      };
+    }
+  });
+  server.registerTool('horizon_workspace_release_inspect', {
+    description: 'Validate and summarize a Horizon release audit',
+    inputSchema: {
+      releaseAudit: z.string().min(1).describe('Raw Horizon release audit JSON'),
+    },
+    annotations: { readOnlyHint: true },
+  }, async ({ releaseAudit }: { releaseAudit: string }) => {
+    try {
+      return jsonResult(inspectWorkspaceReleaseAudit(releaseAudit));
+    } catch (error) {
+      return {
+        content: [{ type: 'text' as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      };
+    }
+  });
+  server.registerTool('horizon_workspace_release_verify', {
+    description: 'Verify a Horizon release audit and optional artifact expectations',
+    inputSchema: {
+      releaseAudit: z.string().min(1).describe('Raw Horizon release audit JSON'),
+      expectReleaseAuditId: z.string().optional().describe('Required release audit id'),
+      expectPackId: z.string().optional().describe('Required embedded workspace pack id'),
+      expectGateReportId: z.string().optional().describe('Required embedded gate report id'),
+      expectGateDigest: z.string().optional().describe('Required embedded gate digest'),
+      expectGateVerdict: z.enum(['pass', 'warn', 'block']).optional().describe('Required gate verdict'),
+      expectTraceCommits: z.number().int().nonnegative().optional().describe('Required commit count'),
+      expectAttributedCommits: z.number().int().nonnegative().optional().describe('Required attributed commit count'),
+      expectUnattributedCommits: z.number().int().nonnegative().optional().describe('Required unattributed commit count'),
+    },
+    annotations: { readOnlyHint: true },
+  }, async ({ releaseAudit, expectReleaseAuditId, expectPackId, expectGateReportId, expectGateDigest, expectGateVerdict, expectTraceCommits, expectAttributedCommits, expectUnattributedCommits }: {
+    releaseAudit: string;
+    expectReleaseAuditId?: string;
+    expectPackId?: string;
+    expectGateReportId?: string;
+    expectGateDigest?: string;
+    expectGateVerdict?: 'pass' | 'warn' | 'block';
+    expectTraceCommits?: number;
+    expectAttributedCommits?: number;
+    expectUnattributedCommits?: number;
+  }) => {
+    try {
+      return jsonResult(verifyWorkspaceReleaseAudit(releaseAudit, {
+        releaseAuditId: expectReleaseAuditId,
+        packId: expectPackId,
+        gateReportId: expectGateReportId,
+        gateDigest: expectGateDigest,
+        gateVerdict: expectGateVerdict,
+        traceCommits: expectTraceCommits,
+        attributedCommits: expectAttributedCommits,
+        unattributedCommits: expectUnattributedCommits,
+      }));
+    } catch (error) {
+      return {
+        content: [{ type: 'text' as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      };
+    }
+  });
 
   server.registerPrompt('horizon_change_review', {
     title: 'Governed change review',
