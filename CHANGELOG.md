@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.0
+
+- Added deterministic decision context bundles for files and text queries.
+- Added `horizon context` CLI and `horizon_context` MCP read tool.
+
 ## 0.7.0
 
 - Added evidence audit for local paths, Git commits, external URLs, and sha256-sealed files.

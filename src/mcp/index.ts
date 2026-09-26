@@ -10,6 +10,7 @@ import {
   validateLedger,
   findConflicts,
   auditLedger,
+  buildContextBundle,
   decisionsForFile,
   createDecision,
   updateDecision,
@@ -68,7 +69,7 @@ export interface McpServerOptions {
 export function createMcpServer(rootArg?: string, options: McpServerOptions = {}): McpServer {
   const root = path.resolve(rootArg ?? process.env.HORIZON_ROOT ?? '.');
   const allowWrite = options.write ?? process.env.HORIZON_MCP_WRITE === '1';
-  const server = new McpServer({ name: 'horizon-ledger', version: '0.7.0' });
+  const server = new McpServer({ name: 'horizon-ledger', version: '0.8.0' });
 
   server.registerTool('horizon_list', {
     description: 'List all decisions in the current Horizon Ledger',
@@ -130,6 +131,15 @@ export function createMcpServer(rootArg?: string, options: McpServerOptions = {}
     inputSchema: {},
     annotations: { readOnlyHint: true },
   }, async () => jsonResult(await auditLedger(await readLedger(root), root)));
+
+  server.registerTool('horizon_context', {
+    description: 'Build a deterministic decision context bundle for a file path or text query',
+    inputSchema: {
+      query: z.string().describe('File path or text query'),
+      limit: z.number().int().positive().max(50).default(10).optional(),
+    },
+    annotations: { readOnlyHint: true },
+  }, async ({ query, limit }: { query: string; limit?: number }) => jsonResult(await buildContextBundle(root, query, limit)));
 
   if (allowWrite) {
   server.registerTool('horizon_create', {

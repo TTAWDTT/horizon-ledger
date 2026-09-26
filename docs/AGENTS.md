@@ -37,6 +37,7 @@ The server is read-only by default. Add `--write` only when you want the agent t
 - `horizon_validate`
 - `horizon_conflicts`
 - `horizon_audit`
+- `horizon_context`
 
 ## Write tools
 

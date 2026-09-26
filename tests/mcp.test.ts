@@ -28,6 +28,7 @@ describe('MCP server', () => {
     expect(names).toContain('horizon_search');
     expect(names).toContain('horizon_conflicts');
     expect(names).toContain('horizon_audit');
+    expect(names).toContain('horizon_context');
     expect(names).not.toContain('horizon_create');
     await readonly.close();
   });

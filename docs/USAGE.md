@@ -11,6 +11,7 @@ horizon link D-0001 D-0002 --type supersedes
 horizon search sqlite
 horizon why sqlite
 horizon why src/core/storage.ts
+horizon context src/core/storage.ts
 horizon score
 horizon validate
 horizon conflicts

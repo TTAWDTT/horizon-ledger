@@ -11,6 +11,8 @@ import {
   findConflicts,
   importAdrDirectory,
   auditLedger,
+  buildContextBundle,
+  contextBundleMarkdown,
   searchLedger,
   buildGraph,
   scoreDecision,
@@ -27,7 +29,7 @@ const program = new Command();
 program
   .name('horizon')
   .description('Local-first decision ledger for humans and AI agents.')
-  .version('0.7.0');
+  .version('0.8.0');
 
 program
   .command('init')
@@ -299,6 +301,25 @@ program
     }
     const shouldFail = diagnostics.some((d) => d.level === 'error') || (options.strict && diagnostics.length > 0);
     if (shouldFail) process.exitCode = 1;
+  });
+
+program
+  .command('context <query>')
+  .description('Build a deterministic decision context bundle for agents or review')
+  .option('-f, --format <format>', 'json | markdown', 'markdown')
+  .option('-o, --out <path>', 'write to a file instead of stdout')
+  .option('-n, --limit <limit>', 'max decisions for text search', '10')
+  .option('-r, --root <path>', 'project root', '.')
+  .action(async (query: string, options) => {
+    const root = path.resolve(options.root ?? '.');
+    const bundle = await buildContextBundle(root, query, Number(options.limit) || 10);
+    const payload = options.format === "json" ? JSON.stringify(bundle, null, 2) : contextBundleMarkdown(bundle);
+    if (options.out) {
+      await import('node:fs/promises').then((fs) => fs.writeFile(options.out, payload, 'utf8'));
+      console.log('Wrote ' + options.out);
+    } else {
+      console.log(payload);
+    }
   });
 
 program
