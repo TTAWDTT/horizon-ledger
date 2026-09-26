@@ -3,7 +3,7 @@ id: D-0030
 title: Publish evidence packages from CI
 status: decided
 createdAt: 2026-09-26T15:26:42.237Z
-updatedAt: 2026-09-26T17:30:50.464Z
+updatedAt: 2026-09-26T17:52:38.884Z
 confidence: high
 horizon: medium
 kind: engineering
@@ -57,7 +57,7 @@ evidence:
     value: tests/actions.test.ts
     strength: strong
     note: Action contract tests
-    hash: 024d6c622d4a102232f1aeac1735eaf8018a3d08efb4b3d3f0edb0e784f670ad
+    hash: 79a948a3798e954db06404d5e453a2abf464fb80276aad424d8a627af610b587
   - id: E-003
     type: link
     value: https://docs.github.com/en/actions/security-for-github-actions/using-artifact-attestations/using-artifact-attestations-to-establish-provenance-for-builds
