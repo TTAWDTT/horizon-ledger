@@ -21,6 +21,14 @@ import {
   decisionsForFile,
   exportLedger,
   exportMarkdown,
+  addWorkspaceRoot,
+  buildWorkspaceContext,
+  initWorkspace,
+  readWorkspace,
+  readWorkspaceLedger,
+  validateWorkspace,
+  workspaceContextMarkdown,
+  workspaceSummary,
 } from '../core';
 import { initLedger } from '../core/ledger';
 import { startMcpServer } from '../mcp';
@@ -31,7 +39,7 @@ const program = new Command();
 program
   .name('horizon')
   .description('Local-first decision ledger for humans and AI agents.')
-  .version('0.9.0');
+  .version('0.10.0');
 
 program
   .command('init')
@@ -424,6 +432,102 @@ program
   });
 
 
+const workspace = program
+  .command('workspace')
+  .description('Aggregate and query decisions across multiple Horizon roots');
+
+workspace
+  .command('init')
+  .description('Initialize a workspace in the current root')
+  .option('-n, --name <name>', 'workspace name', 'Horizon Workspace')
+  .option('-r, --root <path>', 'workspace root', '.')
+  .action(async (options: { name?: string; root?: string }) => {
+    const root = path.resolve(options.root ?? '.');
+    const config = await initWorkspace(root, options.name);
+    console.log(`Initialized ${config.name} with ${config.roots.length} root(s).`);
+  });
+
+workspace
+  .command('add <target>')
+  .description('Add another Horizon ledger to the workspace')
+  .option('-n, --name <name>', 'workspace root name')
+  .option('-r, --root <path>', 'workspace root', '.')
+  .action(async (target: string, options: { name?: string; root?: string }) => {
+    const root = path.resolve(options.root ?? '.');
+    try {
+      const config = await addWorkspaceRoot(root, target, options.name);
+      const added = config.roots.at(-1)!;
+      console.log(`Added workspace root ${added.id}: ${added.name} (${added.path})`);
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  });
+
+workspace
+  .command('list')
+  .description('Show workspace roots and decision counts')
+  .option('-r, --root <path>', 'workspace root', '.')
+  .action(async (options: { root?: string }) => {
+    const root = path.resolve(options.root ?? '.');
+    const config = await readWorkspace(root);
+    if (!config) {
+      console.error(`No Horizon workspace found at ${root}`);
+      process.exitCode = 1;
+      return;
+    }
+    const entries = await readWorkspaceLedger(root, config);
+    const summary = workspaceSummary(entries, config);
+    console.log(`${summary.name}: ${summary.decisions} decisions`);
+    for (const rootSummary of summary.roots) {
+      console.log(`${rootSummary.enabled ? 'enabled' : 'disabled'}\t${rootSummary.id}\t${rootSummary.name}\t${rootSummary.path}\t${rootSummary.decisions}`);
+    }
+  });
+
+workspace
+  .command('validate')
+  .description('Validate all enabled workspace roots as one ledger')
+  .option('-r, --root <path>', 'workspace root', '.')
+  .action(async (options: { root?: string }) => {
+    const root = path.resolve(options.root ?? '.');
+    try {
+      const result = await validateWorkspace(root);
+      console.log(`${result.name}: ${result.decisions} decisions, ${result.diagnostics.length} diagnostics`);
+      for (const diagnostic of result.diagnostics) {
+        console.log(`${diagnostic.level.toUpperCase()}\t${diagnostic.rootName ?? '-'}\t${diagnostic.id ?? '-'}\t${diagnostic.message}`);
+      }
+      if (!result.ok) process.exitCode = 1;
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  });
+
+workspace
+  .command('context <query>')
+  .description('Build deterministic decision context across workspace roots')
+  .option('-f, --format <format>', 'json | markdown', 'markdown')
+  .option('-o, --out <path>', 'write to a file instead of stdout')
+  .option('-r, --root <path>', 'workspace root', '.')
+  .action(async (query: string, options: { format?: string; out?: string; root?: string }) => {
+    const root = path.resolve(options.root ?? '.');
+    try {
+      const context = await buildWorkspaceContext(root, query);
+      const payload = options.format === 'json'
+        ? JSON.stringify(context, null, 2)
+        : workspaceContextMarkdown(context);
+      const outPath = options.out;
+      if (outPath) {
+        await import('node:fs/promises').then((fs) => fs.writeFile(outPath, payload, 'utf8'));
+        console.log('Wrote ' + options.out);
+      } else {
+        console.log(payload);
+      }
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  });
 program
   .command('web')
   .description('Start a local web viewer for the ledger')

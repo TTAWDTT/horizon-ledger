@@ -56,8 +56,19 @@ horizon import-adr docs/adr --dry-run
 horizon context src/core
 horizon pr-context --base main --head HEAD
 horizon export --format markdown --out DECISIONS.md
+
 horizon doctor
 horizon web
+```
+
+## Multi-root workspaces
+
+```bash
+horizon workspace init
+horizon workspace add ../another-repo --name another-repo
+horizon workspace list
+horizon workspace validate
+horizon workspace context storage
 ```
 
 To run a local decision dashboard:
@@ -87,7 +98,7 @@ Read-only is the default. To allow decision capture, use `horizon mcp --write`.
 
 - local-first, Git-friendly Markdown decisions
 - structured alternatives, evidence, and provenance
-- graph + search + simple evidence scoring
+- graph, search, scoring, and cross-repository workspaces
 - a local-only human dashboard with no telemetry
 - useful for humans, coding agents, and future CI gates
 - no vendor lock-in, no hosted database, no LLM required
@@ -105,10 +116,10 @@ Read-only is the default. To allow decision capture, use `horizon mcp --write`.
 - MCP server for coding agents (started)
 - local web dashboard (shipped)
 - GitHub Action validation (shipped)
-- conflict detection (started)
+- cross-repository workspace aggregation (shipped)
 - ADR import (shipped)
-- decision context bundles (shipped)
-- sync protocol and team mode
+- decision context bundles and PR context (shipped)
+- team sync and collaborative workspace packs
 
 ## Why open source
 

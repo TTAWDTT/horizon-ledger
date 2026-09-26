@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.0
+
+- Added Horizon workspaces for aggregating multiple local decision roots.
+- Added `horizon workspace init`, `add`, `list`, `validate`, and `context`.
+- Added workspace diagnostics for duplicate IDs, missing roots, and cross-root conflicts.
+- Added deterministic cross-repository agent context with root provenance.
+
 ## 0.9.0
 
 - Added horizon pr-context for deterministic pull request context.

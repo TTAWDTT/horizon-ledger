@@ -22,6 +22,12 @@ horizon export --format markdown --out DECISIONS.md
 horizon doctor
 horizon web
 horizon mcp
+
+horizon workspace init
+horizon workspace add ../another-repo --name another-repo
+horizon workspace list
+horizon workspace validate
+horizon workspace context storage
 ```
 
 Use `--root <path>` to run against another repository.
@@ -53,3 +59,20 @@ horizon import-adr docs/adr
 ```
 
 The importer creates a Horizon decision from the ADR title, status, context, decision, consequences, considered options, and links. It preserves the original Markdown as evidence and skips files that were already imported.
+
+## Workspaces
+
+A workspace aggregates decisions from several Horizon roots without copying or centralizing them. The workspace config stays local and Git-friendly:
+
+```json
+{
+  "version": 1,
+  "name": "Platform Workspace",
+  "roots": [
+    { "id": "r-001", "name": "api", "path": "../api", "enabled": true },
+    { "id": "r-002", "name": "web", "path": "../web", "enabled": true }
+  ]
+}
+```
+
+Use it when a decision spans a monorepo package, service, client, or infrastructure repository. `workspace context` preserves the root name and path as provenance, while `workspace validate` checks every enabled root as one graph. Duplicate decision IDs, contradictory alternatives, dangling relationships, and unreadable roots are reported together.
