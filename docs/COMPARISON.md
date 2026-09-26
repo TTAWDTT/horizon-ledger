@@ -9,5 +9,6 @@ Horizon Ledger is intentionally not a general knowledge base or a full ADR gener
 | Jira / Linear | Work tracking | Tracks tasks, not why a decision was chosen |
 | PR descriptions | Context in commits | Hard to search, hard to connect across decisions |
 | Slack / Notion | Team communication | Great for discussion, poor for durable, queryable memory |
+| Agent memory stores | Facts, notes, transcripts | Rarely force alternatives, consequences, scopes, or Git-native evidence |
 
 Horizon Ledger keeps the why in the repo, close to code, in a format that humans and agents can both read.

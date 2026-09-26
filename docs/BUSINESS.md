@@ -8,6 +8,8 @@ Horizon Ledger is open source, local-first, and boring by default. The goal is n
 - CLI
 - MCP server
 - local web viewer
+- conflict detection
+- ADR importer
 - export formats
 
 ## Possible paid extensions

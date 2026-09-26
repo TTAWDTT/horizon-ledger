@@ -52,6 +52,7 @@ horizon scope src/core
 horizon score
 horizon validate
 horizon graph
+horizon import-adr docs/adr --dry-run
 horizon export --format markdown --out DECISIONS.md
 horizon doctor
 horizon web
@@ -102,7 +103,8 @@ Read-only is the default. To allow decision capture, use `horizon mcp --write`.
 - MCP server for coding agents (started)
 - local web dashboard (shipped)
 - GitHub Action validation (shipped)
-- conflict detection (started)`n- ADR import (shipped)
+- conflict detection (started)
+- ADR import (shipped)
 - sync protocol and team mode
 
 ## Why open source
