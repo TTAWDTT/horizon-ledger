@@ -44,7 +44,12 @@ program
         },
       };
       const fs2 = await import('node:fs/promises');
-      await fs2.writeFile(path.join(root, '.mcp.json'), JSON.stringify(config, null, 2) + '\n', 'utf8');
+      const mcpPath = path.join(root, '.mcp.json');
+      const exists = await fs2.access(mcpPath).then(() => true).catch(() => false);
+      if (!exists) {
+        await fs2.writeFile(mcpPath, JSON.stringify(config, null, 2) + '\n', 'utf8');
+        console.log('Wrote .mcp.json');
+      }
       console.log('Wrote .mcp.json');
     }
     console.log('Initialized Horizon Ledger at ' + root);
