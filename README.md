@@ -162,3 +162,13 @@ Add this step to a workflow:
 ```
 
 The Action installs Horizon from this repository and runs the same decision validator used by the CLI, so warnings and errors fail before the PR is merged.
+
+To enforce opt-in policies, add the gate Action:
+
+```yaml
+- uses: TTAWDTT/horizon-ledger/.github/actions/gate@main
+  with:
+    base-sha: ${{ github.event.pull_request.base.sha }}
+    head-sha: ${{ github.event.pull_request.head.sha }}
+    root: .
+```

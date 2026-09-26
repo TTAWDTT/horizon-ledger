@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.16.0
+
+- Added a reusable Horizon policy gate GitHub Action.
+- Added single-root and monorepo workspace gate modes.
+- Enabled CI dogfooding of the policy gate.
+
 ## 0.15.0
 
 - Added `horizon workspace gate` with per-root policy evaluation and provenance.

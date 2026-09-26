@@ -43,4 +43,13 @@ The read-only `horizon_workspace_gate` MCP tool uses the same deterministic eval
 
 ## CI
 
-`horizon gate` exits non-zero on `block`. Use it when you want Horizon to participate in branch protection, and use `mode: review` when you only want advisory warnings.
+For a single root, add a reusable gate step:
+
+```yaml
+- uses: TTAWDTT/horizon-ledger/.github/actions/gate@main
+  with:
+    base-sha: ${{ github.event.pull_request.base.sha }}
+    head-sha: ${{ github.event.pull_request.head.sha }}
+```
+
+For a monorepo, set `workspace: true`. The gate exits non-zero on `block`; use `mode: review` for advisory warnings.

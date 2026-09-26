@@ -1,0 +1,53 @@
+name: 'Horizon Policy Gate'
+description: 'Check changed files against evidence-backed Horizon decision policies'
+branding:
+  icon: 'shield-check'
+  color: 'blue'
+inputs:
+  base-sha:
+    description: 'Base ref or SHA'
+    required: false
+    default: ${{ github.event.pull_request.base.sha || 'HEAD~1' }}
+  head-sha:
+    description: 'Head ref or SHA'
+    required: false
+    default: 'HEAD'
+  root:
+    description: 'Repository root containing .horizon'
+    required: false
+    default: '.'
+  workspace:
+    description: 'Use workspace roots for monorepo path mapping'
+    required: false
+    default: 'false'
+runs:
+  using: composite
+  steps:
+    - name: Set up Bun
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: latest
+    - name: Install Horizon Ledger
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: bun install --frozen-lockfile
+    - name: Run Horizon policy gate
+      id: horizon
+      shell: bash
+      env:
+        BASE_SHA: ${{ inputs.base-sha }}
+        HEAD_SHA: ${{ inputs.head-sha }}
+        ROOT: ${{ inputs.root }}
+        ACTION_PATH: ${{ github.action_path }}
+      run: |
+        set -uo pipefail
+        OUT="${RUNNER_TEMP}/horizon-policy-gate.md"
+        if [[ "${{ inputs.workspace }}" == "true" ]]; then
+          bun run "$ACTION_PATH/src/cli/index.ts" workspace gate --base "$BASE_SHA" --head "$HEAD_SHA" --root "$ROOT" --out "$OUT"
+        else
+          bun run "$ACTION_PATH/src/cli/index.ts" gate --base "$BASE_SHA" --head "$HEAD_SHA" --root "$ROOT" --out "$OUT"
+        fi
+        status=$?
+        cat "$OUT" >> "$GITHUB_STEP_SUMMARY"
+        echo "file=$OUT" >> "$GITHUB_OUTPUT"
+        exit $status

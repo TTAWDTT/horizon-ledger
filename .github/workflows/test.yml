@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
@@ -18,6 +20,8 @@ jobs:
       - run: bun run build
       - run: bun run test
       - run: bun run src/cli/index.ts validate --strict
+      - name: Horizon policy gate
+        uses: ./.github/actions/gate
       - name: Horizon PR context
         if: github.event_name == 'pull_request'
         uses: ./.github/actions/pr-context
