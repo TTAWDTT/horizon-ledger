@@ -19,6 +19,7 @@ import {
   readWorkspaceLedger,
   validateWorkspace,
   exportWorkspacePack,
+  planWorkspacePackImport,
   workspaceSummary,
   createDecision,
   updateDecision,
@@ -84,7 +85,7 @@ export interface McpServerOptions {
 export function createMcpServer(rootArg?: string, options: McpServerOptions = {}): McpServer {
   const root = path.resolve(rootArg ?? process.env.HORIZON_ROOT ?? '.');
   const allowWrite = options.write ?? process.env.HORIZON_MCP_WRITE === '1';
-  const server = new McpServer({ name: 'horizon-ledger', version: '0.12.0' });
+  const server = new McpServer({ name: 'horizon-ledger', version: '0.13.0' });
 
   server.registerTool('horizon_list', {
     description: 'List all decisions in the current Horizon Ledger',
@@ -198,6 +199,20 @@ export function createMcpServer(rootArg?: string, options: McpServerOptions = {}
       return jsonResult(await exportWorkspacePack(root));
     } catch {
       return workspaceNotFound(root);
+    }
+  });
+  server.registerTool('horizon_workspace_pack_import_plan', {
+    description: 'Plan a workspace pack import without writing any files',
+    inputSchema: { pack: z.string().describe('Raw Horizon workspace pack JSON') },
+    annotations: { readOnlyHint: true },
+  }, async ({ pack }: { pack: string }) => {
+    try {
+      return jsonResult(await planWorkspacePackImport(root, pack));
+    } catch (error) {
+      return {
+        content: [{ type: 'text' as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      };
     }
   });
   server.registerTool('horizon_validate', {

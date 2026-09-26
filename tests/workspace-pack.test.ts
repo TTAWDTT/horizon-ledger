@@ -6,6 +6,8 @@ import {
   addWorkspaceRoot,
   createDecision,
   exportWorkspacePack,
+  importWorkspacePack,
+  planWorkspacePackImport,
   inspectWorkspacePack,
   initLedger,
   initWorkspace,
@@ -68,5 +70,74 @@ describe('horizon workspace pack', () => {
     const tampered = structuredClone(pack);
     tampered.decisions[0].markdown = tampered.decisions[0].markdown.replace('Use a decision pack', 'Changed');
     expect(() => parseWorkspacePack(JSON.stringify(tampered))).toThrow(/pack id mismatch/);
+  });
+  it('imports a pack idempotently', async () => {
+    const source = await makeRoot();
+    const destination = await makeRoot();
+    await initLedger(source);
+    await initWorkspace(destination);
+    await initWorkspace(source);
+    await createDecision(source, {
+      title: 'Use decision packs',
+      summary: 'Packs move decisions between machines.',
+      context: 'Teams need portable context.',
+      decision: 'Use deterministic packs.',
+      consequences: 'Handoffs stay auditable.',
+      scope: ['src/core'],
+      alternatives: [{ id: 'A-001', name: 'Zip', verdict: 'deferred' }],
+      evidence: [{ id: 'E-001', type: 'file', value: 'src/core', strength: 'strong' }],
+    });
+
+    const pack = await exportWorkspacePack(source);
+    const plan = await planWorkspacePackImport(destination, JSON.stringify(pack));
+    expect(plan.ok).toBe(true);
+    expect(plan.createRoots).toBe(1);
+    expect(plan.createDecisions).toBe(1);
+
+    const imported = await importWorkspacePack(destination, JSON.stringify(pack));
+    expect(imported.write).toBe(true);
+    expect(imported.createDecisions).toBe(1);
+
+    const again = await planWorkspacePackImport(destination, JSON.stringify(pack));
+    expect(again.createDecisions).toBe(0);
+    expect(again.reuseDecisions).toBe(1);
+
+    const importedPack = await exportWorkspacePack(destination);
+    expect(importedPack.decisions.map((item) => item.decision.id)).toContain('D-0001');
+  });
+  it('blocks conflicting decision ids', async () => {
+    const source = await makeRoot();
+    const destination = await makeRoot();
+    await initLedger(source);
+    await initWorkspace(source);
+    await initLedger(destination);
+    await initWorkspace(destination);
+
+    await createDecision(source, {
+      title: 'Use SQLite',
+      summary: 'SQLite keeps data local.',
+      context: 'Local-first storage is required.',
+      decision: 'Use SQLite.',
+      consequences: 'Data stays portable.',
+      scope: ['src'],
+      alternatives: [{ id: 'A-001', name: 'Postgres', verdict: 'rejected', reason: 'Too heavy.' }],
+      evidence: [{ id: 'E-001', type: 'file', value: 'src', strength: 'strong' }],
+    });
+    await createDecision(destination, {
+      id: 'D-0001',
+      title: 'Use hosted Postgres',
+      summary: 'Postgres fits multi-tenant workloads.',
+      context: 'The service is multi-tenant.',
+      decision: 'Use hosted Postgres.',
+      consequences: 'Data is remote.',
+      scope: ['src'],
+      alternatives: [{ id: 'A-001', name: 'SQLite', verdict: 'rejected', reason: 'Too limited.' }],
+    });
+
+    const pack = await exportWorkspacePack(source);
+    const plan = await planWorkspacePackImport(destination, JSON.stringify(pack));
+    expect(plan.ok).toBe(false);
+    expect(plan.conflicts).toBe(1);
+    expect(plan.actions.some((item) => item.kind === 'conflict')).toBe(true);
   });
 });

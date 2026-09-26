@@ -31,8 +31,11 @@ import {
   getWorkspaceDecision,
   exportWorkspace,
   exportWorkspacePack,
+  importWorkspacePack,
   inspectWorkspacePack,
+  planWorkspacePackImport,
   parseWorkspacePack,
+  workspacePackImportPlanMarkdown,
   workspacePackMarkdown,
   initWorkspace,
   readWorkspace,
@@ -52,7 +55,7 @@ const program = new Command();
 program
   .name('horizon')
   .description('Local-first decision ledger for humans and AI agents.')
-  .version('0.12.0');
+  .version('0.13.0');
 
 program
   .command('init')
@@ -708,6 +711,27 @@ workspacePack
       } else {
         console.log(payload);
       }
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  });
+
+workspacePack
+  .command('import <file>')
+  .description('Plan or apply a workspace pack import; writes only with --write')
+  .option('--write', 'apply the plan instead of only planning it')
+  .option('-f, --format <format>', 'json | markdown', 'json')
+  .option('-r, --root <path>', 'workspace root', '.')
+  .action(async (file: string, options: { write?: boolean; format?: string; root?: string }) => {
+    const root = path.resolve(options.root ?? '.');
+    try {
+      const raw = await import('node:fs/promises').then((fs) => fs.readFile(file, 'utf8'));
+      const plan = options.write
+        ? await importWorkspacePack(root, raw)
+        : await planWorkspacePackImport(root, raw);
+      console.log(options.format === 'markdown' ? workspacePackImportPlanMarkdown(plan) : JSON.stringify(plan, null, 2));
+      if (!plan.ok) process.exitCode = 1;
     } catch (error) {
       console.error(error instanceof Error ? error.message : String(error));
       process.exitCode = 1;

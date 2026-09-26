@@ -1,6 +1,6 @@
 {
   "name": "horizon-ledger",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "A local-first decision ledger for humans and AI agents. Capture why decisions were made, prove them with evidence, and query the graph from code, docs, and agents.",
   "main": "dist/core/index.js",
   "types": "dist/core/index.d.ts",

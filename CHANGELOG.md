@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.13.0
+
+- Added read-only workspace pack import planning and explicit `--write` apply.
+- Added `horizon workspace pack import` and `horizon_workspace_pack_import_plan` MCP tool.
+- Added deterministic imported-root provenance and conflicting decision-ID blocking.
+
 ## 0.12.0
 
 - Added deterministic, hash-bound Horizon workspace packs.

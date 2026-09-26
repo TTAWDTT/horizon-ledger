@@ -36,6 +36,7 @@ horizon workspace pr-context --base main --head HEAD
 horizon workspace export --format markdown --out WORKSPACE.md
 horizon workspace pack export --out WORKSPACE-PACK.json
 horizon workspace pack inspect WORKSPACE-PACK.json
+horizon workspace pack import WORKSPACE-PACK.json
 horizon workspace context storage
 ```
 
