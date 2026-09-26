@@ -366,10 +366,12 @@ program
   .option('-f, --format <format>', 'json | markdown', 'markdown')
   .option('-o, --out <path>', 'write to a file instead of stdout')
   .option('-n, --limit <limit>', 'max decisions for text search', '10')
+  .option('-m, --max-tokens <tokens>', 'approximate token budget; never truncates a decision')
   .option('-r, --root <path>', 'project root', '.')
   .action(async (query: string, options) => {
     const root = path.resolve(options.root ?? '.');
-    const bundle = await buildContextBundle(root, query, Number(options.limit) || 10);
+    const maxTokens = options.maxTokens ? Number(options.maxTokens) : undefined;
+    const bundle = await buildContextBundle(root, query, Number(options.limit) || 10, maxTokens);
     const payload = options.format === "json" ? JSON.stringify(bundle, null, 2) : contextBundleMarkdown(bundle);
     if (options.out) {
       await import('node:fs/promises').then((fs) => fs.writeFile(options.out, payload, 'utf8'));
@@ -754,11 +756,12 @@ workspace
   .description('Build deterministic decision context across workspace roots')
   .option('-f, --format <format>', 'json | markdown', 'markdown')
   .option('-o, --out <path>', 'write to a file instead of stdout')
+  .option('--max-tokens <tokens>', 'approximate token budget; omissions are reported explicitly')
   .option('-r, --root <path>', 'workspace root', '.')
-  .action(async (query: string, options: { format?: string; out?: string; root?: string }) => {
+  .action(async (query: string, options: { format?: string; out?: string; root?: string; maxTokens?: string }) => {
     const root = path.resolve(options.root ?? '.');
     try {
-      const context = await buildWorkspaceContext(root, query);
+      const context = await buildWorkspaceContext(root, query, undefined, options.maxTokens ? Number(options.maxTokens) : undefined);
       const payload = options.format === 'json'
         ? JSON.stringify(context, null, 2)
         : workspaceContextMarkdown(context);

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.22.0
+
+- Added approximate token budgets to single-root and workspace context packs.
+- Added `--max-tokens`, `horizon_context.maxTokens`, and `horizon_workspace_context.maxTokens`.
+- Context packing preserves whole decisions, ranks blocking decisions first, and reports omissions explicitly.
+
 ## 0.21.0
 
 - Added a reusable Horizon Evidence Package GitHub Action.

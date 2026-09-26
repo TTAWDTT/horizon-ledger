@@ -97,7 +97,7 @@ export interface McpServerOptions {
 export function createMcpServer(rootArg?: string, options: McpServerOptions = {}): McpServer {
   const root = path.resolve(rootArg ?? process.env.HORIZON_ROOT ?? '.');
   const allowWrite = options.write ?? process.env.HORIZON_MCP_WRITE === '1';
-  const server = new McpServer({ name: 'horizon-ledger', version: '0.21.0' });
+  const server = new McpServer({ name: 'horizon-ledger', version: '0.22.0' });
 
   server.registerTool('horizon_list', {
     description: 'List all decisions in the current Horizon Ledger',
@@ -156,11 +156,14 @@ export function createMcpServer(rootArg?: string, options: McpServerOptions = {}
 
   server.registerTool('horizon_workspace_context', {
     description: 'Search decisions across all enabled workspace roots with provenance',
-    inputSchema: { query: z.string().describe('Search query') },
+    inputSchema: {
+      query: z.string().describe('Search query'),
+      maxTokens: z.number().int().positive().optional().describe('Approximate token budget; omissions are explicit'),
+    },
     annotations: { readOnlyHint: true },
-  }, async ({ query }: { query: string }) => {
+  }, async ({ query, maxTokens }: { query: string; maxTokens?: number }) => {
     try {
-      return jsonResult(await buildWorkspaceContext(root, query));
+      return jsonResult(await buildWorkspaceContext(root, query, undefined, maxTokens));
     } catch {
       return workspaceNotFound(root);
     }
@@ -367,9 +370,10 @@ export function createMcpServer(rootArg?: string, options: McpServerOptions = {}
     inputSchema: {
       query: z.string().describe('File path or text query'),
       limit: z.number().int().positive().max(50).default(10).optional(),
+      maxTokens: z.number().int().positive().optional().describe('Approximate token budget; omissions are explicit'),
     },
     annotations: { readOnlyHint: true },
-  }, async ({ query, limit }: { query: string; limit?: number }) => jsonResult(await buildContextBundle(root, query, limit)));
+  }, async ({ query, limit, maxTokens }: { query: string; limit?: number; maxTokens?: number }) => jsonResult(await buildContextBundle(root, query, limit, maxTokens)));
 
   if (allowWrite) {
   server.registerTool('horizon_create', {

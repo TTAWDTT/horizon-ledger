@@ -10,6 +10,7 @@ import { findConflicts, type ConflictDiagnostic } from './conflicts';
 import { searchLedger } from './search';
 import { auditLedger, type EvidenceAudit } from './audit';
 import { buildChangeGate, type ChangeGate, type GateViolation, type GateVerdict } from './policy';
+import { compareDecisionsForContext, estimateDecisionTokens, type ContextPacking } from './context';
 
 export interface WorkspaceRootConfig {
   id: string;
@@ -85,6 +86,7 @@ export interface WorkspaceContext {
   decisions: WorkspaceSearchHit[];
   conflicts: ConflictDiagnostic[];
   diagnostics: WorkspaceDiagnostic[];
+  packing?: ContextPacking;
 }
 
 export interface WorkspaceAuditFinding extends EvidenceAudit {
@@ -578,23 +580,63 @@ export function workspaceSummary(
   };
 }
 
+function packWorkspaceContext(
+  hits: WorkspaceSearchHit[],
+  maxTokens?: number,
+): { decisions: WorkspaceSearchHit[]; packing: ContextPacking } {
+  const estimatedTokens = hits.reduce((sum, hit) => sum + estimateDecisionTokens(hit.decision), 0);
+  if (maxTokens === undefined) {
+    return {
+      decisions: hits,
+      packing: { mode: 'unlimited', estimatedTokens, included: hits.length, omitted: [] },
+    };
+  }
+  if (!Number.isFinite(maxTokens) || maxTokens <= 0 || !Number.isInteger(maxTokens)) {
+    throw new Error('maxTokens must be a positive integer');
+  }
+
+  const ranked = [...hits].sort((left, right) =>
+    compareDecisionsForContext(left.decision, right.decision) || left.decision.id.localeCompare(right.decision.id),
+  );
+  const included: WorkspaceSearchHit[] = [];
+  const omitted: NonNullable<ContextPacking['omitted']> = [];
+  let used = 0;
+  for (const hit of ranked) {
+    const cost = estimateDecisionTokens(hit.decision);
+    if (used + cost > maxTokens) {
+      omitted.push({ decisionId: hit.decision.id, reason: 'budget', estimatedTokens: cost });
+      continue;
+    }
+    included.push(hit);
+    used += cost;
+  }
+
+  return {
+    decisions: included,
+    packing: { mode: 'budget', maxTokens, estimatedTokens: used, included: included.length, omitted },
+  };
+}
+
 export async function buildWorkspaceContext(
   root: string,
   query: string,
   config?: WorkspaceConfig,
+  maxTokens?: number,
 ): Promise<WorkspaceContext> {
   const workspace = config ?? await readWorkspace(root);
   if (!workspace) throw new Error(`No Horizon workspace found at ${path.resolve(root)}`);
 
   const entries = await readWorkspaceLedger(root, workspace);
+  const { decisions, packing } = packWorkspaceContext(searchWorkspaceLedger(entries, query), maxTokens);
   return {
     version: 1,
     root: path.resolve(root),
     query,
     roots: workspaceRootSummaries(workspace, entries),
-    decisions: searchWorkspaceLedger(entries, query),
+    decisions,
     conflicts: findConflicts(entries.map((entry) => entry.decision)),
     diagnostics: await workspaceDiagnostics(root, entries, workspace),
+    packing,
   };
 }
 
@@ -1011,8 +1053,19 @@ export function workspaceContextMarkdown(context: WorkspaceContext): string {
     `Query: \`${context.query}\``,
     `Roots: ${context.roots.filter((root) => root.enabled).length}`,
     `Decisions: ${context.decisions.length}`,
+    context.packing?.mode === 'budget'
+      ? `Budget: ${context.packing.estimatedTokens}/${context.packing.maxTokens} estimated tokens`
+      : `Estimated tokens: ${context.packing?.estimatedTokens ?? 0}`,
     '',
   ];
+
+  if (context.packing?.omitted.length) {
+    lines.push('Omitted by budget:', '');
+    for (const item of context.packing.omitted) {
+      lines.push(`- ${item.decisionId} (${item.estimatedTokens} estimated tokens)`);
+    }
+    lines.push('');
+  }
 
   if (!context.decisions.length) {
     lines.push('No relevant decisions found.', '');

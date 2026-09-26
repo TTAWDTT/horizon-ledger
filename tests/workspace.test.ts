@@ -74,6 +74,11 @@ describe('horizon workspace', () => {
     expect(summary.roots.find((root) => root.name === 'first')?.decisions).toBe(1);
 
     const context = await buildWorkspaceContext(workspaceRoot, 'SQLite evidence');
+    const bounded = await buildWorkspaceContext(workspaceRoot, 'SQLite evidence', config, 1);
+    expect(bounded.packing?.mode).toBe('budget');
+    expect(bounded.packing?.omitted.length).toBeGreaterThan(0);
+    expect(workspaceContextMarkdown(bounded)).toContain('Omitted by budget');
+
     const found = await getWorkspaceDecision(workspaceRoot, 'D-0001');
     expect(found?.rootName).toBe('first');
     expect(context.decisions.map((hit) => hit.decision.id)).toContain('D-0001');

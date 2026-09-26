@@ -146,7 +146,7 @@ Read-only is the default. To allow decision capture, use `horizon mcp --write`.
 - cross-repository workspace aggregation (shipped)
 - ADR import (shipped)
 - policy/evidence change gates, sha256 seals, and hash-bound reports (shipped)
-- decision context bundles and PR context (shipped)
+- token-budgeted decision context packs and PR context (shipped)
 - portable workspace packs and decision evidence packages (shipped)
 
 ## Why open source

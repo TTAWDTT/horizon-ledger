@@ -12,7 +12,7 @@ horizon link D-0001 D-0002 --type supersedes
 horizon search sqlite
 horizon why sqlite
 horizon why src/core/storage.ts
-horizon context src/core/storage.ts
+horizon context src/core/storage.ts --max-tokens 2000
 horizon score
 horizon validate
 horizon conflicts
@@ -45,7 +45,7 @@ horizon workspace pack import WORKSPACE-PACK.json
 horizon workspace evidence export --base main --head HEAD --out EVIDENCE-PACK.json
 horizon workspace evidence inspect EVIDENCE-PACK.json
 horizon workspace evidence verify EVIDENCE-PACK.json --expect-verdict pass
-horizon workspace context storage
+horizon workspace context storage --max-tokens 2000
 ```
 
 Use `--root <path>` to run against another repository.
