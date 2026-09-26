@@ -2,6 +2,7 @@ import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mc
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod/v4';
 import path from 'node:path';
+import { HORIZON_VERSION } from '../version';
 import {
   readLedger,
   searchLedger,
@@ -23,6 +24,7 @@ import {
   exportWorkspacePack,
   planWorkspacePackImport,
   workspaceSummary,
+  buildTrace,
   createDecision,
   sealEvidence,
   updateDecision,
@@ -63,7 +65,7 @@ const relationSchema = z.enum(['supersedes', 'depends_on', 'related_to']);
 
 const policyInputSchema = z.object({
   mode: z.enum(['observe', 'review', 'block']).default('review').describe('Whether the gate records, warns, or blocks'),
-  requireEvidence: z.enum(['any', 'verified', 'strong', 'sealed']).default('verified').describe('Evidence quality required by the gate'),
+  requireEvidence: z.enum(['any', 'verified', 'strong', 'sealed', 'attributed']).default('verified').describe('Evidence quality required by the gate'),
 }).optional();
 
 function workspaceNotFound(root: string) {
@@ -97,7 +99,7 @@ export interface McpServerOptions {
 export function createMcpServer(rootArg?: string, options: McpServerOptions = {}): McpServer {
   const root = path.resolve(rootArg ?? process.env.HORIZON_ROOT ?? '.');
   const allowWrite = options.write ?? process.env.HORIZON_MCP_WRITE === '1';
-  const server = new McpServer({ name: 'horizon-ledger', version: '0.25.0' });
+  const server = new McpServer({ name: 'horizon-ledger', version: HORIZON_VERSION });
 
   server.registerTool('horizon_list', {
     description: 'List all decisions in the current Horizon Ledger',
@@ -377,11 +379,12 @@ export function createMcpServer(rootArg?: string, options: McpServerOptions = {}
           `Head: ${head}`,
           `Workspace mode: ${workspaceMode}`,
           '',
-          '1. Run the matching Horizon gate for the range.',
-          '2. Export the Horizon evidence package if the gate is acceptable.',
-          '3. Verify the evidence pack, gate report, digest, and verdict before publishing.',
-          '4. Report pass, warn, or block with decision ids and evidence findings.',
-          '5. Never claim compliance from a warning; warn means human review is required.',
+          '1. Run horizon_trace for the release range and inspect unattributed commits.',
+          '2. Run the matching Horizon gate for the range.',
+          '3. Export the Horizon evidence package if the gate is acceptable.',
+          '4. Verify the evidence pack, gate report, digest, and verdict before publishing.',
+          '5. Report pass, warn, or block with decision ids and evidence findings.',
+          '6. Never claim compliance from a warning; warn means human review is required.',
         ].join('\n'),
       },
     }],
@@ -495,6 +498,24 @@ export function createMcpServer(rootArg?: string, options: McpServerOptions = {}
     annotations: { readOnlyHint: true },
   }, async () => jsonResult(await auditLedger(await readLedger(root), root)));
 
+  server.registerTool('horizon_trace', {
+    description: 'Trace Git commits in a range back to decisions by evidence, scope, or commit-message reference',
+    inputSchema: {
+      base: z.string().min(1).describe('Base ref, tag, or SHA'),
+      head: z.string().default('HEAD').describe('Head ref, tag, or SHA'),
+      decisionId: z.string().optional().describe('Optional decision id'),
+    },
+    annotations: { readOnlyHint: true },
+  }, async ({ base, head, decisionId }: { base?: string; head?: string; decisionId?: string }) => {
+    try {
+      return jsonResult(await buildTrace(root, base ?? 'HEAD~1', head ?? 'HEAD', { decisionId }));
+    } catch (error) {
+      return {
+        content: [{ type: 'text' as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      };
+    }
+  });
   server.registerTool('horizon_context', {
     description: 'Build a deterministic decision context bundle for a file path or text query',
     inputSchema: {
@@ -654,3 +675,5 @@ export async function startMcpServer(rootArg?: string, options: McpServerOptions
   const root = path.resolve(rootArg ?? process.env.HORIZON_ROOT ?? '.');
   console.error(`Horizon Ledger MCP server running on stdio. Root: ${root}. Write tools: ${options.write || process.env.HORIZON_MCP_WRITE === '1' ? 'enabled' : 'disabled'}`);
 }
+
+

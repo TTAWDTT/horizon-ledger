@@ -20,3 +20,5 @@ export * from './report';
 export * from './hash';
 export * from './evidence';
 export * from './sarif';
+export * from './commit';
+export * from './trace';

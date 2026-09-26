@@ -1,3 +1,9 @@
+## 0.26.0
+
+- Added `horizon trace` and the read-only `horizon_trace` MCP tool.
+- Added commit attribution by decision scope, commit-message reference, and attached commit evidence.
+- Added `requireEvidence: attributed` for policies that require implementation commits, not just any existing commit.
+- Added stable SARIF reporting for missing attributed evidence.
 # Changelog
 
 ## 0.25.0
@@ -167,3 +173,4 @@
 ## 0.1.0
 
 - Initial local-first decision ledger CLI and core.
+

@@ -18,6 +18,7 @@ horizon validate
 horizon conflicts
 horizon audit
 horizon pr-context --base main --head HEAD
+horizon trace --base main --head HEAD
 horizon graph
 horizon gate --base main --head HEAD
 horizon gate --base main --head HEAD --report horizon-gate.json
@@ -118,3 +119,4 @@ For a monorepo workspace, use the same action with workspace aggregation:
     strict: true
     workspace: true
 ```
+

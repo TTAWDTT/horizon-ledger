@@ -50,6 +50,7 @@ The server is read-only by default. Add `--write` only when you want the agent t
 - `horizon_workspace_evidence_export` — export a portable decision evidence package
 - `horizon_workspace_evidence_verify` — verify the package, embedded pack, embedded report, and statement subjects
 - `horizon_context` — optionally pack context within a token budget
+- `horizon_trace` — trace commits to decisions by evidence, scope, or message reference
 
 ## Write tools
 
@@ -79,3 +80,5 @@ MCP hosts can invoke the same governed workflow as user-selected prompts:
 - `horizon_change_review` — inspect decisions and run the policy gate before a change
 - `horizon_decision_capture` — capture a durable decision with alternatives, evidence, and policy
 - `horizon_release_audit` — audit a release range with gate and evidence tools
+
+

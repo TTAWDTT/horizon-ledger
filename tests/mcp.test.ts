@@ -29,6 +29,7 @@ describe('MCP server', () => {
     expect(names).toContain('horizon_conflicts');
     expect(names).toContain('horizon_audit');
     expect(names).toContain('horizon_context');
+    expect(names).toContain('horizon_trace');
     expect(names).not.toContain('horizon_create');
     await readonly.close();
   });
@@ -280,3 +281,4 @@ describe('MCP server', () => {
     }
   });
 });
+

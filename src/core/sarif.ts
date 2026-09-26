@@ -71,6 +71,11 @@ const ruleDescriptions: Record<string, { title: string; detail: string; level: S
     detail: 'A decision governing the changed path requires hash-sealed evidence.',
     level: 'error',
   },
+  'horizon/no-attributed-evidence': {
+    title: 'Missing attributed evidence',
+    detail: 'A decision governing the changed path requires commit evidence attributed to its scope or id.',
+    level: 'error',
+  },
   'horizon/no-verified-evidence': {
     title: 'Missing verified evidence',
     detail: 'A decision governing the changed path requires locally verified evidence.',
@@ -179,3 +184,4 @@ export function changeGateSarif(gate: GateLike, workspace = false): HorizonSarif
 export function workspaceChangeGateSarif(gate: WorkspaceChangeGate): HorizonSarif {
   return changeGateSarif(gate, true);
 }
+

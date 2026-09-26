@@ -2,7 +2,7 @@ import path from 'node:path';
 import { readLedger } from './ledger';
 import { listChangedFiles } from './pr-context';
 import { decisionsForFile } from './relevance';
-import { auditLedger, type LedgerAudit } from './audit';
+import { auditLedger, isAttributed, type LedgerAudit } from './audit';
 import { findConflicts, type ConflictDiagnostic } from './conflicts';
 import { validateLedger, type Diagnostic } from './validate';
 import { scoreDecision } from './score';
@@ -84,7 +84,14 @@ export async function buildChangeGate(root: string, files: string[]): Promise<Ch
         findings.some((finding) => finding.evidenceId === evidence.id && finding.status === 'verified'),
       );
       const sealedOk = findings.some((finding) => finding.status === 'verified' && finding.sealed);
-      if (requireEvidence === 'strong' && !strongOk) {
+      if (requireEvidence === 'attributed' && !findings.some(isAttributed)) {
+        violations.push({
+          level,
+          decisionId: decision.id,
+          ruleId: 'horizon/no-attributed-evidence',
+          message: `${decision.id} has no attributed commit evidence`,
+        });
+      } else if (requireEvidence === 'strong' && !strongOk) {
         violations.push({
           level,
           decisionId: decision.id,
@@ -205,3 +212,8 @@ export function changeGateMarkdown(gate: ChangeGate): string {
 
   return lines.join('\n');
 }
+
+
+
+
+

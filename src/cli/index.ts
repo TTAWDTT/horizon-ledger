@@ -60,7 +60,10 @@ import {
   workspaceChangeGateSarif,
   workspaceChangeGateMarkdown,
   workspaceSummary,
+  buildTrace,
+  traceMarkdown,
 } from '../core';
+import { HORIZON_VERSION } from '../version';
 import { initLedger } from '../core/ledger';
 import { startMcpServer } from '../mcp';
 import { startLedgerServer } from '../web/server';
@@ -81,7 +84,7 @@ const program = new Command();
 program
   .name('horizon')
   .description('Local-first decision ledger for humans and AI agents.')
-  .version('0.13.0');
+  .version(HORIZON_VERSION);
 
 program
   .command('init')
@@ -416,6 +419,26 @@ program
     }
   });
 
+program
+  .command('trace')
+  .description('Trace Git commits in a range back to decisions')
+  .option('-b, --base <ref>', 'base ref or sha', 'HEAD~1')
+  .option('-h, --head <ref>', 'head ref or sha', 'HEAD')
+  .option('--decision <id>', 'trace one decision by id')
+  .option('-f, --format <format>', 'json | markdown', 'markdown')
+  .option('-r, --root <path>', 'project root', '.')
+  .action(async (options: { base?: string; head?: string; decision?: string; format?: string; root?: string }) => {
+    const root = path.resolve(options.root ?? '.');
+    try {
+      const report = await buildTrace(root, options.base ?? 'HEAD~1', options.head ?? 'HEAD', { decisionId: options.decision });
+      const payload = options.format === 'json' ? JSON.stringify(report, null, 2) : traceMarkdown(report);
+      console.log(payload);
+      if (!report.summary.attributedCommits) process.exitCode = 1;
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  });
 program
   .command('pr-context')
   .description('Build decision context for files changed in a pull request')
@@ -1040,3 +1063,4 @@ program
   });
 
 program.parseAsync(process.argv);
+

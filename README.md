@@ -31,13 +31,13 @@ Horizon Ledger keeps decisions **close to code**, in Markdown + structured front
 Install the latest tagged Git release:
 
 ```bash
-bun add github:TTAWDTT/horizon-ledger#v0.24.0
+bun add github:TTAWDTT/horizon-ledger#v0.26.0
 ```
 
 or
 
 ```bash
-npm install github:TTAWDTT/horizon-ledger#v0.24.0
+npm install github:TTAWDTT/horizon-ledger#v0.26.0
 ```
 
 ## Quickstart
@@ -59,6 +59,7 @@ horizon graph
 horizon import-adr docs/adr --dry-run
 horizon context src/core
 horizon pr-context --base main --head HEAD
+horizon trace --base main --head HEAD
 horizon gate --base main --head HEAD
 horizon export --format markdown --out DECISIONS.md
 
@@ -69,6 +70,27 @@ horizon web
 ## Change gate
 
 See [docs/POLICY.md](docs/POLICY.md) for opt-in decision policies.
+
+## Commit trace and attribution
+
+Horizon can connect implementation history to decisions instead of treating any commit hash as proof:
+
+```bash
+horizon trace --base v0.25.0 --head HEAD
+horizon trace --base main --head HEAD --decision D-0001 --format json
+```
+
+The trace classifies a commit as `evidence` when its SHA is attached, `reference` when the commit message names the decision, and `scope` when it touches the decision scope. The read-only `horizon_trace` MCP tool exposes the same result to agents.
+
+Use `requireEvidence: attributed` when a policy must be enforced by an implementation commit:
+
+```yaml
+policy:
+  mode: block
+  requireEvidence: attributed
+```
+
+This accepts a commit that touches the decision scope or names the decision in its message. It still treats Git history as immutable local evidence; it does not fetch from a remote or invent proof.
 
 ## Multi-root workspaces
 
@@ -126,7 +148,7 @@ Read-only is the default. To allow decision capture, use `horizon mcp --write`.
 - structured alternatives, evidence, provenance, and optional sha256 seals
 - graph, search, scoring, cross-repository workspaces, and portable packs
 - a local-only human dashboard with no telemetry
-- optional sha256 evidence seals, hash-bound gate reports, SARIF output, and portable evidence packages
+- optional sha256 evidence seals, commit attribution, hash-bound gate reports, SARIF output, and portable evidence packages
 - useful for humans, coding agents, and opt-in CI gates
 - no vendor lock-in, no hosted database, no LLM required
 
@@ -145,7 +167,7 @@ Read-only is the default. To allow decision capture, use `horizon mcp --write`.
 - GitHub Action validation (shipped)
 - cross-repository workspace aggregation (shipped)
 - ADR import (shipped)
-- policy/evidence change gates, sha256 seals, hash-bound reports, and SARIF output (shipped)
+- policy/evidence change gates, attributed commits, sha256 seals, hash-bound reports, and SARIF output (shipped)
 - token-budgeted decision context packs and PR context (shipped)
 - portable workspace packs and decision evidence packages (shipped)
 
@@ -191,3 +213,6 @@ To retain the decisions and gate verdict as one artifact, add the evidence Actio
     root: .
     artifact: true
 ```
+
+
+

@@ -59,7 +59,7 @@ evidence:
     value: src/core/sarif.ts
     strength: strong
     note: SARIF producer with stable rule ids and fingerprints
-    hash: 87587a6fd988b128dd18295e2f87ff98a3ffa4c123957117ac02aacd6f4b1dac
+    hash: b415067bce9bac6060b9b7352e91167a6ba266e18fcf09a98aa59683d6b25955
   - id: E-002
     type: test
     value: tests/sarif.test.ts
@@ -89,3 +89,4 @@ Add stable Horizon rule ids to gate violations and a SARIF converter for single-
 ## Consequences
 
 Teams can route Horizon findings into existing SARIF tooling while continuing to use the hash-bound Horizon report for evidence and verification.
+
