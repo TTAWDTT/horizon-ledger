@@ -1,6 +1,6 @@
 # Horizon Ledger
 
-> A local-first decision ledger for humans and AI agents. Capture **why** decisions were made, prove them with evidence, and query the graph from code, docs, and agents.
+> A local-first, Git-native decision ledger and workspace for humans and AI agents. Built and iterated by Codex.
 
 [![test](https://github.com/TTAWDTT/horizon-ledger/actions/workflows/test.yml/badge.svg)](https://github.com/TTAWDTT/horizon-ledger/actions/workflows/test.yml)
 [![Release](https://img.shields.io/github/v/release/TTAWDTT/horizon-ledger?sort=semver)](https://github.com/TTAWDTT/horizon-ledger/releases/latest)
