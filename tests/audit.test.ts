@@ -3,7 +3,11 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { addEvidence, createDecision, initLedger, readLedger, auditLedger, sealEvidence } from '../src/core';
+
+const execFileAsync = promisify(execFile);
 
 describe('evidence audit', () => {
   it('seals local evidence and detects drift', async () => {
@@ -63,5 +67,37 @@ describe('evidence audit', () => {
     expect(audit.missing).toBe(1);
     expect(audit.findings.some((item) => item.evidenceId === 'E-002' && item.status === 'verified')).toBe(true);
     expect(audit.findings.some((item) => item.evidenceId === 'E-004' && item.status === 'missing')).toBe(true);
+  });
+});
+
+describe('commit evidence', () => {
+  it('treats an existing Git commit as sealed evidence', async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'horizon-commit-'));
+    await initLedger(root);
+    await execFileAsync('git', ['init'], { cwd: root });
+    await fs.writeFile(path.join(root, 'proof.md'), 'committed proof');
+    await execFileAsync('git', ['add', 'proof.md'], { cwd: root });
+    await execFileAsync('git', [
+      '-c', 'user.name=Horizon Test',
+      '-c', 'user.email=test@horizon.local',
+      'commit', '-m', 'proof',
+    ], { cwd: root });
+    const commit = (await execFileAsync('git', ['rev-parse', 'HEAD'], { cwd: root })).stdout.trim();
+
+    const decision = await createDecision(root, {
+      title: 'Use commit evidence',
+      summary: 'Commits are immutable local evidence.',
+      decision: 'Verify decisions through Git commits.',
+      consequences: 'Evidence remains traceable without duplicating content.',
+      scope: ['src'],
+    });
+    await addEvidence(root, decision.id, { type: 'commit', value: commit, strength: 'strong' });
+
+    const ledger = await readLedger(root);
+    const audit = await auditLedger(ledger, root);
+    expect(audit.verified).toBe(1);
+    expect(audit.sealed).toBe(1);
+    expect(audit.findings[0].status).toBe('verified');
+    expect(audit.findings[0].sealed).toBe(true);
   });
 });
