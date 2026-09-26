@@ -27,6 +27,7 @@ controls:
     requirement: A decided decision with verified evidence must cover authentication.
     scopes:
       - src/auth
+    requireStatus: decided
     requireEvidence: verified
   - id: EVD-01
     title: Incident response is documented
@@ -44,7 +45,7 @@ A control selects decisions by:
 - `scopes` — exact or parent paths in decision scope
 - `roots` — workspace root names
 
-A control can also require a specific decision `status` (`decided` by default) and one of the existing evidence levels: `any`, `verified`, `strong`, `sealed`, or `attributed`.
+A control can also require a specific `requireStatus` (`decided` by default) and one of the existing evidence levels: `any`, `verified`, `strong`, `sealed`, or `attributed`.
 
 ## Report format
 
