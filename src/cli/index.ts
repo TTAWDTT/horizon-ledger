@@ -31,6 +31,7 @@ import {
   auditWorkspace,
   buildWorkspaceContext,
   buildWorkspacePullRequestContext,
+  buildWorkspaceChangeGate,
   getWorkspaceDecision,
   exportWorkspace,
   exportWorkspacePack,
@@ -47,6 +48,7 @@ import {
   workspaceContextMarkdown,
   workspaceExportMarkdown,
   workspacePullRequestContextMarkdown,
+  workspaceChangeGateMarkdown,
   workspaceSummary,
 } from '../core';
 import { initLedger } from '../core/ledger';
@@ -515,6 +517,37 @@ workspace
       const config = await addWorkspaceRoot(root, target, options.name);
       const added = config.roots.at(-1)!;
       console.log(`Added workspace root ${added.id}: ${added.name} (${added.path})`);
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  });
+
+workspace
+  .command('gate')
+  .description('Check changed files against policy-governed workspace decisions')
+  .option('-b, --base <sha>', 'base ref or sha', 'HEAD~1')
+  .option('-h, --head <sha>', 'head ref or sha', 'HEAD')
+  .option('--file <path>', 'changed path (repeatable)', (v: string, prev: string[]) => [...(prev ?? []), v], [])
+  .option('-f, --format <format>', 'json | markdown', 'markdown')
+  .option('-o, --out <path>', 'write to a file instead of stdout')
+  .option('-r, --root <path>', 'workspace root', '.')
+  .action(async (options: { base?: string; head?: string; file?: string[]; format?: string; out?: string; root?: string }) => {
+    const root = path.resolve(options.root ?? '.');
+    try {
+      const files = options.file?.length ? options.file : undefined;
+      const gate = await buildWorkspaceChangeGate(root, options.base ?? 'HEAD~1', options.head ?? 'HEAD', files);
+      const payload = options.format === 'json'
+        ? JSON.stringify(gate, null, 2)
+        : workspaceChangeGateMarkdown(gate);
+      const outPath = options.out;
+      if (outPath) {
+        await import('node:fs/promises').then((fs) => fs.writeFile(outPath, payload, 'utf8'));
+        console.log('Wrote ' + outPath);
+      } else {
+        console.log(payload);
+      }
+      if (gate.verdict === 'block') process.exitCode = 1;
     } catch (error) {
       console.error(error instanceof Error ? error.message : String(error));
       process.exitCode = 1;

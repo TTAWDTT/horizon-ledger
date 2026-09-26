@@ -15,6 +15,7 @@ import {
   buildPullRequestGate,
   auditWorkspace,
   getWorkspaceDecision,
+  buildWorkspaceChangeGate,
   buildWorkspaceContext,
   readWorkspace,
   readWorkspaceLedger,
@@ -92,7 +93,7 @@ export interface McpServerOptions {
 export function createMcpServer(rootArg?: string, options: McpServerOptions = {}): McpServer {
   const root = path.resolve(rootArg ?? process.env.HORIZON_ROOT ?? '.');
   const allowWrite = options.write ?? process.env.HORIZON_MCP_WRITE === '1';
-  const server = new McpServer({ name: 'horizon-ledger', version: '0.14.0' });
+  const server = new McpServer({ name: 'horizon-ledger', version: '0.15.0' });
 
   server.registerTool('horizon_list', {
     description: 'List all decisions in the current Horizon Ledger',
@@ -222,7 +223,24 @@ export function createMcpServer(rootArg?: string, options: McpServerOptions = {}
       };
     }
   });
-  server.registerTool('horizon_gate', {
+  server.registerTool('horizon_workspace_gate', {
+    description: 'Check changed workspace files against policy-governed decisions in each root',
+    inputSchema: {
+      base: z.string().optional().describe('Base ref or sha; defaults to HEAD~1'),
+      head: z.string().optional().describe('Head ref or sha; defaults to HEAD'),
+      files: z.array(z.string()).optional().describe('Changed workspace-relative paths'),
+    },
+    annotations: { readOnlyHint: true },
+  }, async ({ base, head, files }: { base?: string; head?: string; files?: string[] }) => {
+    try {
+      return jsonResult(await buildWorkspaceChangeGate(root, base ?? 'HEAD~1', head ?? 'HEAD', files));
+    } catch (error) {
+      return {
+        content: [{ type: 'text' as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      };
+    }
+  });  server.registerTool('horizon_gate', {
     description: 'Check changed files against policy-governed decisions',
     inputSchema: {
       base: z.string().optional().describe('Base ref or sha; defaults to HEAD~1'),

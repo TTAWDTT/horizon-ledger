@@ -12,6 +12,7 @@ import {
   auditWorkspace,
   buildWorkspaceContext,
   buildWorkspacePullRequestContext,
+  buildWorkspaceChangeGate,
   createDecision,
   exportWorkspace,
   getWorkspaceDecision,
@@ -23,6 +24,7 @@ import {
   workspaceContextMarkdown,
   workspaceExportMarkdown,
   workspacePullRequestContextMarkdown,
+  workspaceChangeGateMarkdown,
   workspaceSummary,
 } from '../src/core';
 
@@ -137,6 +139,56 @@ describe('horizon workspace', () => {
     expect(context.decisions.map((item) => item.decision.id).sort()).toEqual(['D-0001', 'D-0002']);
     expect(workspacePullRequestContextMarkdown(context)).toContain('[api] D-0001');
     expect(workspacePullRequestContextMarkdown(context)).toContain('[web] D-0002');
+  });
+  it('gates monorepo changes with root provenance', async () => {
+    const workspaceRoot = await makeRoot();
+    const apiRoot = path.join(workspaceRoot, 'packages', 'api');
+    const webRoot = path.join(workspaceRoot, 'packages', 'web');
+    await initLedger(apiRoot);
+    await initLedger(webRoot);
+    await fs.mkdir(path.join(apiRoot, 'src'), { recursive: true });
+    await fs.writeFile(path.join(apiRoot, 'src', 'storage.ts'), 'export {};');
+
+    await createDecision(apiRoot, {
+      title: 'Use SQLite in API',
+      summary: 'API storage uses SQLite.',
+      context: 'The API needs local-first storage.',
+      decision: 'Use SQLite.',
+      consequences: 'The API remains portable.',
+      status: 'decided',
+      scope: ['src'],
+      policy: { mode: 'block', requireEvidence: 'any' },
+      alternatives: [{ id: 'A-001', name: 'Postgres', verdict: 'rejected', reason: 'Too heavy.' }],
+      evidence: [{ id: 'E-001', type: 'file', value: 'src/storage.ts', strength: 'strong' }],
+    });
+    await createDecision(webRoot, {
+      id: 'D-0002',
+      title: 'Use server components',
+      summary: 'Server components reduce client JavaScript.',
+      context: 'The web app needs fast initial rendering.',
+      decision: 'Use server components.',
+      consequences: 'Some interactions need client components.',
+      status: 'decided',
+      scope: ['app'],
+      policy: { mode: 'block', requireEvidence: 'any' },
+      alternatives: [{ id: 'A-001', name: 'SPA', verdict: 'rejected', reason: 'Larger bundle.' }],
+    });
+
+    await initWorkspace(workspaceRoot);
+    await addWorkspaceRoot(workspaceRoot, apiRoot, 'api');
+    await addWorkspaceRoot(workspaceRoot, webRoot, 'web');
+
+    const gate = await buildWorkspaceChangeGate(workspaceRoot, 'main', 'HEAD', [
+      'packages/api/src/storage.ts',
+      'packages/web/app/page.tsx',
+      'README.md',
+    ]);
+    expect(gate.verdict).toBe('block');
+    expect(gate.coverage.governed).toBe(2);
+    expect(gate.coverage.unguarded).toBe(1);
+    expect(gate.gates.map((item) => `${item.rootName}:${item.gate.verdict}`).sort()).toEqual(['api:pass', 'web:block']);
+    expect(gate.violations.some((item) => item.rootName === 'web' && item.message.includes('no attached evidence'))).toBe(true);
+    expect(workspaceChangeGateMarkdown(gate)).toContain('## [web] packages/web');
   });
   it('detects duplicate IDs and contradictory verdicts across roots', async () => {
     const first = await makeRoot();

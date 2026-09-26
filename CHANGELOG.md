@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.15.0
+
+- Added `horizon workspace gate` with per-root policy evaluation and provenance.
+- Added the read-only `horizon_workspace_gate` MCP tool.
+
 ## 0.14.0
 
 - Added an opt-in evidence-aware change gate with `observe`, `review`, and `block` policies.

@@ -31,8 +31,16 @@ A blocking decision must be `decided` and have the requested evidence. Missing e
 
 Agents can call `horizon_gate` with changed paths or a base/head range. It is read-only and returns structured findings, so a host can decide whether to warn, stop, or continue with human review. With MCP writes enabled, `horizon_create` and `horizon_update` can set the same policy field.
 
+## Workspaces
+
+For a monorepo, run the workspace gate instead. It maps repository-relative paths to each enabled root and reports violations with root provenance:
+
+```bash
+horizon workspace gate --base main --head HEAD
+```
+
+The read-only `horizon_workspace_gate` MCP tool uses the same deterministic evaluation.
+
 ## CI
 
 `horizon gate` exits non-zero on `block`. Use it when you want Horizon to participate in branch protection, and use `mode: review` when you only want advisory warnings.
-
-

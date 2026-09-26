@@ -9,6 +9,7 @@ import { scoreDecision } from './score';
 import { findConflicts, type ConflictDiagnostic } from './conflicts';
 import { searchLedger } from './search';
 import { auditLedger, type EvidenceAudit } from './audit';
+import { buildChangeGate, type ChangeGate, type GateViolation, type GateVerdict } from './policy';
 
 export interface WorkspaceRootConfig {
   id: string;
@@ -121,6 +122,39 @@ export interface WorkspacePullRequestContext {
   };
   diagnostics: WorkspaceDiagnostic[];
 }
+
+export interface WorkspaceGateViolation extends GateViolation {
+  rootId: string;
+  rootName: string;
+  rootPath: string;
+}
+
+export interface WorkspaceRootGate {
+  rootId: string;
+  rootName: string;
+  rootPath: string;
+  files: string[];
+  gate: ChangeGate;
+}
+
+export interface WorkspaceChangeGate {
+  version: 1;
+  root: string;
+  base: string;
+  head: string;
+  files: string[];
+  roots: WorkspaceRootConfig[];
+  gates: WorkspaceRootGate[];
+  decisions: WorkspacePullRequestDecision[];
+  coverage: {
+    governed: number;
+    unguarded: number;
+  };
+  diagnostics: WorkspaceDiagnostic[];
+  violations: WorkspaceGateViolation[];
+  verdict: GateVerdict;
+}
+
 export interface WorkspaceExport {
   version: 1;
   name: string;
@@ -697,6 +731,148 @@ export async function buildWorkspacePullRequestContext(
   };
 }
 
+export async function buildWorkspaceChangeGate(
+  root: string,
+  base: string,
+  head: string,
+  files?: string[],
+): Promise<WorkspaceChangeGate> {
+  const workspaceRoot = path.resolve(root);
+  const workspace = await readWorkspace(workspaceRoot);
+  if (!workspace) throw new Error(`No Horizon workspace found at ${workspaceRoot}`);
+
+  const changed = files ?? await listChangedFiles(workspaceRoot, base, head);
+  const roots = workspace.roots.filter((item) => item.enabled !== false);
+  const gates: WorkspaceRootGate[] = [];
+  const decisions: WorkspacePullRequestDecision[] = [];
+  const diagnostics: WorkspaceDiagnostic[] = [];
+  const violations: WorkspaceGateViolation[] = [];
+  const governed = new Set<string>();
+
+  for (const workspaceRootConfig of roots) {
+    const relevantFiles = changed
+      .map((file) => ({ file, relative: decisionRootPath(file, workspaceRootConfig.path) }))
+      .filter((item): item is { file: string; relative: string } => item.relative !== undefined);
+    if (!relevantFiles.length) continue;
+
+    const resolvedRoot = path.resolve(workspaceRoot, workspaceRootConfig.path);
+    const gate = await buildChangeGate(resolvedRoot, relevantFiles.map((item) => item.relative));
+    if (!gate.decisions.length) continue;
+
+    gates.push({
+      rootId: workspaceRootConfig.id,
+      rootName: workspaceRootConfig.name,
+      rootPath: workspaceRootConfig.path,
+      files: relevantFiles.map((item) => item.relative),
+      gate,
+    });
+
+    for (const decision of gate.decisions) {
+      decisions.push({
+        rootId: workspaceRootConfig.id,
+        rootName: workspaceRootConfig.name,
+        rootPath: workspaceRootConfig.path,
+        decision,
+      });
+    }
+    for (const violation of gate.violations) {
+      violations.push({
+        ...violation,
+        rootId: workspaceRootConfig.id,
+        rootName: workspaceRootConfig.name,
+        rootPath: workspaceRootConfig.path,
+      });
+    }
+    for (const diagnostic of gate.diagnostics) {
+      diagnostics.push({
+        rootId: workspaceRootConfig.id,
+        rootName: workspaceRootConfig.name,
+        level: diagnostic.level,
+        id: diagnostic.id,
+        message: diagnostic.message,
+      });
+    }
+    if (gate.coverage.governed > 0) {
+      for (const item of relevantFiles) governed.add(item.file);
+    }
+  }
+
+  const verdict: GateVerdict = violations.some((item) => item.level === 'error')
+    ? 'block'
+    : violations.some((item) => item.level === 'warn') ? 'warn' : 'pass';
+
+  return {
+    version: 1,
+    root: workspaceRoot,
+    base,
+    head,
+    files: changed,
+    roots,
+    gates,
+    decisions,
+    coverage: {
+      governed: governed.size,
+      unguarded: changed.length - governed.size,
+    },
+    diagnostics,
+    violations,
+    verdict,
+  };
+}
+
+export function workspaceChangeGateMarkdown(gate: WorkspaceChangeGate): string {
+  const lines = [
+    '# Horizon workspace change gate',
+    '',
+    `Verdict: **${gate.verdict.toUpperCase()}**`,
+    `Changed paths: ${gate.files.length}`,
+    `Governed paths: ${gate.coverage.governed}`,
+    `Unguarded paths: ${gate.coverage.unguarded}`,
+    '',
+  ];
+
+  if (!gate.gates.length) {
+    lines.push('No policy-governed workspace decisions apply to the changed paths.', '');
+  }
+
+  for (const rootGate of gate.gates) {
+    lines.push(
+      `## [${rootGate.rootName}] ${rootGate.rootPath}`,
+      '',
+      `Verdict: **${rootGate.gate.verdict.toUpperCase()}**`,
+      `Relative paths: ${rootGate.files.length}`,
+      `Governed paths: ${rootGate.gate.coverage.governed}`,
+      `Unguarded paths: ${rootGate.gate.coverage.unguarded}`,
+      '',
+    );
+    for (const decision of rootGate.gate.decisions) {
+      const score = scoreDecision(decision);
+      lines.push(
+        `### ${decision.id}: ${decision.title}`,
+        '',
+        `Status: ${decision.status}`,
+        `Policy: ${decision.policy?.mode ?? 'observe'}`,
+        `Evidence requirement: ${decision.policy?.requireEvidence ?? 'none'}`,
+        `Quality: ${score.score}/${score.total}`,
+        '',
+      );
+    }
+    for (const violation of rootGate.gate.violations) {
+      lines.push(`- ${violation.level.toUpperCase()}: ${violation.message}`);
+    }
+    lines.push('');
+  }
+
+  if (gate.diagnostics.length) {
+    lines.push('## Workspace diagnostics', '');
+    for (const diagnostic of gate.diagnostics) {
+      lines.push(`- [${diagnostic.level}] ${diagnostic.rootName ? `${diagnostic.rootName}: ` : ''}${diagnostic.message}`);
+    }
+    lines.push('');
+  }
+
+  return lines.join('\n');
+}
 export function workspacePullRequestContextMarkdown(context: WorkspacePullRequestContext): string {
   const lines: string[] = [
     '## Horizon workspace decision context',
@@ -873,5 +1049,3 @@ export function workspaceContextMarkdown(context: WorkspaceContext): string {
 
   return lines.join('\n');
 }
-
-

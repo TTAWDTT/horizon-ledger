@@ -34,6 +34,7 @@ horizon workspace get D-0001
 horizon workspace validate
 horizon workspace audit
 horizon workspace pr-context --base main --head HEAD
+horizon workspace gate --base main --head HEAD
 horizon workspace export --format markdown --out WORKSPACE.md
 horizon workspace pack export --out WORKSPACE-PACK.json
 horizon workspace pack inspect WORKSPACE-PACK.json
@@ -111,4 +112,3 @@ For a monorepo workspace, use the same action with workspace aggregation:
     strict: true
     workspace: true
 ```
-

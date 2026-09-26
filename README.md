@@ -82,13 +82,14 @@ horizon workspace get D-0001
 horizon workspace validate
 horizon workspace audit
 horizon workspace pr-context --base main --head HEAD
+horizon workspace gate --base main --head HEAD
 horizon workspace export --format markdown --out WORKSPACE.md
 horizon workspace pack export --out WORKSPACE-PACK.json
 horizon workspace pack import WORKSPACE-PACK.json
 horizon workspace context storage
 ```
 
-The MCP server also exposes read-only `horizon_workspace_list`, `horizon_workspace_audit`, `horizon_workspace_context`, and `horizon_workspace_validate`, `horizon_workspace_pack_export`, and `horizon_workspace_pack_import_plan` tools, so coding agents can query cross-root decisions without a cloud service. Workspace packs are deterministic and SHA-256-bound, so you can review, archive, or hand off decisions without a cloud service. Pack import defaults to a read-only plan; add --write to apply it. Workspace configs are validated strictly: duplicate IDs, names, and aliases fail fast instead of silently degrading into a partial graph.
+The MCP server also exposes read-only `horizon_workspace_list`, `horizon_workspace_audit`, `horizon_workspace_context`, `horizon_workspace_validate`, `horizon_workspace_gate`, and `horizon_workspace_pack_export`, and `horizon_workspace_pack_import_plan` tools, so coding agents can query cross-root decisions without a cloud service. Workspace packs are deterministic and SHA-256-bound, so you can review, archive, or hand off decisions without a cloud service. Pack import defaults to a read-only plan; add --write to apply it. Workspace configs are validated strictly: duplicate IDs, names, and aliases fail fast instead of silently degrading into a partial graph.
 
 To run a local decision dashboard:
 
@@ -119,7 +120,7 @@ Read-only is the default. To allow decision capture, use `horizon mcp --write`.
 - structured alternatives, evidence, and provenance
 - graph, search, scoring, cross-repository workspaces, and portable packs
 - a local-only human dashboard with no telemetry
-- useful for humans, coding agents, and future CI gates
+- useful for humans, coding agents, and opt-in CI gates
 - no vendor lock-in, no hosted database, no LLM required
 
 ## Design principles
@@ -137,6 +138,7 @@ Read-only is the default. To allow decision capture, use `horizon mcp --write`.
 - GitHub Action validation (shipped)
 - cross-repository workspace aggregation (shipped)
 - ADR import (shipped)
+- policy/evidence change gates (shipped)
 - decision context bundles and PR context (shipped)
 - portable workspace packs (export/inspect/import planning/apply shipped), then richer sync
 
